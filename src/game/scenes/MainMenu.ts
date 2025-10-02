@@ -1,32 +1,24 @@
-import { Scene, GameObjects } from 'phaser';
+import { Scene } from 'phaser';
 
-export class MainMenu extends Scene
-{
-    background: GameObjects.Image;
-    logo: GameObjects.Image;
-    title: GameObjects.Text;
+export default class MainMenu extends Scene {
+  constructor() {
+    super('MainMenu');
+  }
 
-    constructor ()
-    {
-        super('MainMenu');
-    }
+  create(): void {
+    const { width, height } = this.scale;
+    this.add.text(width / 2, height / 2 - 100, 'Hành Trình Anh Hùng Việt', {
+      font: '28px Arial',
+      color: '#FFD700',
+    }).setOrigin(0.5);
 
-    create ()
-    {
-        this.background = this.add.image(512, 384, 'background');
+    const startText = this.add.text(width / 2, height / 2, 'Bấm SPACE để bắt đầu', {
+      font: '20px Arial',
+      color: '#ffffff',
+    }).setOrigin(0.5);
 
-        this.logo = this.add.image(512, 300, 'logo');
-
-        this.title = this.add.text(512, 460, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
-            align: 'center'
-        }).setOrigin(0.5);
-
-        this.input.once('pointerdown', () => {
-
-            this.scene.start('Game');
-
-        });
-    }
+    this.input.keyboard.once('keydown-SPACE', () => {
+      this.scene.start('Game');
+    });
+  }
 }
