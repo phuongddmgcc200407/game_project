@@ -15,6 +15,7 @@ export default class Preloader extends Scene {
 
     // Load tài nguyên cho game
     this.load.image('background', '../assets/bg_1.png'); 
+    this.load.image('arrow', '../assets/arrow_1.png'); 
     this.load.image('ground', '../assets/ground.png'); 
     this.load.image('leloi', '../assets/leloi_1.png'); // nhân vật chính
     this.load.image('enemy', 'assets/minh_soldier.png'); // lính Minh
