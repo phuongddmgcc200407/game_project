@@ -17,7 +17,7 @@ export default function StartGame(parentId: string) {
             default: 'arcade',
             arcade: {
                 gravity: { y: 600 }, 
-                debug: true          
+                debug: false          
             }
         }
         ,

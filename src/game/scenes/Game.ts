@@ -66,7 +66,7 @@ export default class GameScene extends Scene {
         "enemy"
       ) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
       enemy.setCollideWorldBounds(true);
-      enemy.setVelocityX(-50 - i * 30);
+      enemy.setVelocityX(-80 - i * 80);
       enemy.setBounce(0.2);
     }
     this.physics.add.collider(this.enemies, this.ground);
@@ -139,25 +139,48 @@ export default class GameScene extends Scene {
     if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
       this.shootArrow();
     }
+
+    // --- 👇 Enemy luôn hướng vào player ---
+    this.enemies.getChildren().forEach((enemy: Phaser.GameObjects.GameObject) => {
+      const e = enemy as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+
+      if (!e.active) return;
+
+      // Nếu player ở bên trái → enemy đi sang trái
+      if (this.player.x < e.x) {
+        e.setVelocityX(-100);
+        e.setFlipX(false);
+      }
+      // Nếu player ở bên phải → enemy đi sang phải
+      else {
+        e.setVelocityX(100);
+        e.setFlipX(true);
+      }
+    });
   }
 
-  private shootArrow(): void {
-    // Tạo mũi tên tại vị trí nhân vật
-    const arrow = this.arrows.create(this.player.x, this.player.y - 55, "arrow") as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-    arrow.setCollideWorldBounds(false);
 
-    // Xác định hướng bắn
-    const speed = this.player.flipX ? -200 : 1500; // tốc độ cao hơn → bay xa hơn
+  private shootArrow(): void {
+    const arrow = this.arrows.create(
+      this.player.x,
+      this.player.y - 55,
+      "arrow"
+    ) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+
+    // Tắt gravity cho mũi tên
+    arrow.body.setAllowGravity(false);
+
+    // Xác định tốc độ bay theo hướng nhân vật
+    const speed = this.player.flipX ? -400 : 400;
     arrow.setVelocityX(speed);
 
-    // Xoay sprite mũi tên theo hướng
     if (this.player.flipX) {
       arrow.setFlipX(true);
     }
 
-    // Sau 5 giây thì xoá mũi tên (nếu chưa trúng gì)
-    this.time.delayedCall(5000, () => {
+    this.time.delayedCall(1500, () => {
       if (arrow.active) arrow.destroy();
     });
   }
+
 }
