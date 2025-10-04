@@ -14,17 +14,18 @@ export default class Preloader extends Scene {
     }).setOrigin(0.5);
 
     // Load tài nguyên cho game
-    this.load.image('background', '../assets/bg_1.png');
+    this.load.image('background', '../assets/bg_2.png');
     this.load.image('arrow', '../assets/arrow_4.png');
-    this.load.image('ground', '../assets/ground.png');
+    this.load.image('ground', '../assets/ground_2.png');
     this.load.image('sword', 'assets/sword.png'); // gươm thần
     // nhân vật chính 1
-    this.load.image('leloi1', '../assets/leloi_1.png'); 
-    this.load.image('leloi2', '../assets/leloi_2.png'); 
-    this.load.image('leloi3', '../assets/leloi_3.png'); 
-    this.load.image('leloi4', '../assets/leloi_4.png'); 
-    this.load.image('leloi5', '../assets/leloi_5.png'); 
-    this.load.image('leloi6', '../assets/leloi_6.png'); 
+    this.load.image('leloi1', '../assets/lt1.png'); 
+    this.load.image('leloi2', '../assets/lt2.png'); 
+    this.load.image('leloi3', '../assets/lt3.png'); 
+    this.load.image('leloi4', '../assets/lt4.png'); 
+    this.load.image('leloi5', '../assets/lt5.png'); 
+    this.load.image('leloi6', '../assets/lt6.png'); 
+    this.load.image('leloi7', '../assets/lt7.png'); 
 
     //enemy minh_1
     this.load.image('enemy1', 'assets/m1_1.png');

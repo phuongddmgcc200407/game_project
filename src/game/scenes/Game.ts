@@ -14,33 +14,48 @@ export default class GameScene extends Scene {
   private healthText!: Phaser.GameObjects.Text;
   private isInvincible: boolean = false;
 
-  // --- Biến cho hệ thống charge ---
   private isCharging: boolean = false;
-  private chargePower: number = 0; // từ 0 → 100
+  private chargePower: number = 0;
   private chargeBar!: Phaser.GameObjects.Graphics;
 
-  // --- Biến Game Over ---
   private isGameOver: boolean = false;
   private gameOverText!: Phaser.GameObjects.Text;
+
+  // --- NPC ---
+  private npc!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+  private dialogueBox!: Phaser.GameObjects.Rectangle;
+  private dialogueText!: Phaser.GameObjects.Text;
+  private dialogueLines: string[] = [
+    "Chào ngươi, ta là Nguyễn Trãi – mưu sĩ của nghĩa quân Lam Sơn.",
+    "Phía trước là đồn quân Minh, chúng đang chiếm giữ kho lương.",
+    "Nhiệm vụ của ngươi là tiêu diệt bọn chúng, mở đường cho nghĩa quân!",
+    "Hãy cẩn thận, chiến trường này đầy hiểm nguy...",
+    "Giờ thì lên đường đi, Lê Lợi!",
+  ];
+  private currentLineIndex: number = 0;
+  private isInDialogue: boolean = false;
+  private hasTalkedToNpc: boolean = false;
 
   constructor() {
     super("Game");
   }
 
   preload(): void {
-    this.load.image("ground", "assets/ground.png");
+    this.load.image("ground", "assets/ground_2.png");
     this.load.image("background", "assets/background.png");
     this.load.image("arrow", "assets/arrow.png");
+    this.load.image("npc", "assets/nguyentrai_1.png");
 
-    // --- load frames Lê Lợi ---
-    this.load.image("leloi1", "assets/leloi_1.png");
-    this.load.image("leloi2", "assets/leloi_2.png");
-    this.load.image("leloi3", "assets/leloi_3.png");
-    this.load.image("leloi4", "assets/leloi_4.png");
-    this.load.image("leloi5", "assets/leloi_5.png");
-    this.load.image("leloi6", "assets/leloi_6.png");
+    // --- Frames Lê Lợi ---
+    this.load.image('leloi1', '../assets/lt1.png'); 
+    this.load.image('leloi2', '../assets/lt2.png'); 
+    this.load.image('leloi3', '../assets/lt3.png'); 
+    this.load.image('leloi4', '../assets/lt4.png'); 
+    this.load.image('leloi5', '../assets/lt5.png'); 
+    this.load.image('leloi6', '../assets/lt6.png'); 
+    this.load.image('leloi7', '../assets/lt7.png'); 
 
-    // --- load enemy frames ---
+    // --- Enemy frames ---
     this.load.image("enemy1", "assets/m1_1.png");
     this.load.image("enemy2", "assets/m1_2.png");
     this.load.image("enemy3", "assets/m1_3.png");
@@ -51,48 +66,6 @@ export default class GameScene extends Scene {
   }
 
   create(): void {
-    // --- Animation Lê Lợi ---
-    this.anims.create({
-      key: "leloi-walk-left",
-      frames: [
-        { key: "leloi1" }, { key: "leloi2" }, { key: "leloi3" },
-        { key: "leloi4" }, { key: "leloi5" }, { key: "leloi6" },
-      ],
-      frameRate: 10,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "leloi-walk-right",
-      frames: [
-        { key: "leloi1" }, { key: "leloi2" }, { key: "leloi3" },
-        { key: "leloi4" }, { key: "leloi5" }, { key: "leloi6" },
-      ],
-      frameRate: 10,
-      repeat: -1,
-    });
-
-    // --- Animation enemy ---
-    this.anims.create({
-      key: "enemy-walk-left",
-      frames: [
-        { key: "enemy1" }, { key: "enemy2" }, { key: "enemy3" },
-        { key: "enemy3_2" }, { key: "enemy3_3" },
-        { key: "enemy3_4" }, { key: "enemy4" },
-      ],
-      frameRate: 8,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "enemy-walk-right",
-      frames: [
-        { key: "enemy1" }, { key: "enemy2" }, { key: "enemy3" },
-        { key: "enemy3_2" }, { key: "enemy3_3" },
-        { key: "enemy3_4" }, { key: "enemy4" },
-      ],
-      frameRate: 8,
-      repeat: -1,
-    });
-
     // --- Background ---
     const bgWidth = 900;
     for (let i = 0; i < 6; i++) {
@@ -110,14 +83,101 @@ export default class GameScene extends Scene {
     this.player.setOrigin(0.5, 1);
     this.physics.add.collider(this.player, this.ground);
 
-    // --- Control ---
-    this.cursors = this.input.keyboard!.createCursorKeys();
-    this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    // --- NPC ---
+    this.npc = this.physics.add.sprite(400, 450, "npc");
+    this.npc.setImmovable(true);
+    this.npc.body.allowGravity = false;
+    this.physics.add.collider(this.npc, this.ground);
 
-    // --- Camera ---
-    this.cameras.main.setBounds(0, 0, bgWidth * 6, 600);
-    this.physics.world.setBounds(0, 0, bgWidth * 6, 600);
-    this.cameras.main.startFollow(this.player);
+    // --- Dialogue UI ---
+    this.dialogueBox = this.add
+      .rectangle(
+        this.cameras.main.width / 2,
+        this.cameras.main.height - 100,
+        700,
+        120,
+        0x000000,
+        0.6
+      )
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setVisible(false);
+
+    this.dialogueText = this.add
+      .text(
+        this.cameras.main.width / 2 - 320,
+        this.cameras.main.height - 150,
+        "",
+        { fontSize: "20px", color: "#ffffff", wordWrap: { width: 640 } }
+      )
+      .setScrollFactor(0)
+      .setVisible(false);
+
+    this.physics.add.overlap(
+      this.player,
+      this.npc,
+      this.startDialogue,
+      undefined,
+      this
+    );
+
+    // --- Animations ---
+    this.anims.create({
+      key: "leloi-walk-left",
+      frames: [
+        { key: "leloi1" },
+        { key: "leloi2" },
+        { key: "leloi3" },
+        { key: "leloi4" },
+        { key: "leloi5" },
+        { key: "leloi6" },
+        { key: "leloi7" },
+      ],
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "leloi-walk-right",
+      frames: [
+        { key: "leloi1" },
+        { key: "leloi2" },
+        { key: "leloi3" },
+        { key: "leloi4" },
+        { key: "leloi5" },
+        { key: "leloi6" },
+        { key: "leloi7" },
+      ],
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    // --- Enemy animations ---
+    this.anims.create({
+      key: "enemy-walk-left",
+      frames: [
+        { key: "enemy1" },
+        { key: "enemy2" },
+        { key: "enemy3" },
+        { key: "enemy4" },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "enemy-walk-right",
+      frames: [
+        { key: "enemy1" },
+        { key: "enemy2" },
+        { key: "enemy3_2" },
+        { key: "enemy3_3" },
+        { key: "enemy3_4" },
+        { key: "enemy4" },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
 
     // --- Enemy group ---
     this.enemies = this.physics.add.group();
@@ -126,45 +186,148 @@ export default class GameScene extends Scene {
         this.mapWidth - 50 - i * 100,
         450,
         "enemy1"
-      ) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody & {
-        health: number;
-        maxHealth: number;
-        healthBar: Phaser.GameObjects.Graphics;
-      };
-
+      ) as any;
       enemy.setCollideWorldBounds(true);
       enemy.setBounce(0.2);
       enemy.play("enemy-walk-left");
-      enemy.setVelocityX(-100);
-
-      // --- Gán máu cho enemy ---
       enemy.maxHealth = 3;
       enemy.health = enemy.maxHealth;
-
-      // --- Thanh máu ---
       enemy.healthBar = this.add.graphics();
     }
     this.physics.add.collider(this.enemies, this.ground);
 
-    // --- Hiển thị máu người chơi ---
-    this.healthText = this.add.text(16, 16, `HP: ${this.playerHealth}`, {
-      fontSize: "24px",
-      color: "#ff0000",
-    }).setScrollFactor(0);
+    // --- UI ---
+    this.healthText = this.add
+      .text(16, 16, `HP: ${this.playerHealth}`, {
+        fontSize: "24px",
+        color: "#ff0000",
+      })
+      .setScrollFactor(0);
 
     // --- Arrow group ---
     this.arrows = this.physics.add.group();
+    this.physics.add.overlap(
+      this.arrows,
+      this.enemies,
+      this.handleArrowHit,
+      undefined,
+      this
+    );
+    this.physics.add.overlap(
+      this.player,
+      this.enemies,
+      this.handlePlayerHit,
+      undefined,
+      this
+    );
 
-    // --- Collider ---
-    this.physics.add.overlap(this.arrows, this.enemies, this.handleArrowHit, undefined, this);
-    this.physics.add.overlap(this.player, this.enemies, this.handlePlayerHit, undefined, this);
+    // --- Controls ---
+    this.cursors = this.input.keyboard!.createCursorKeys();
+    this.attackKey = this.input.keyboard!.addKey(
+      Phaser.Input.Keyboard.KeyCodes.A
+    );
 
-    // --- Thanh lực ---
-    this.chargeBar = this.add.graphics();
-    this.chargeBar.setScrollFactor(0);
+    // --- Camera ---
+    this.cameras.main.setBounds(0, 0, this.mapWidth, 600);
+    this.physics.world.setBounds(0, 0, this.mapWidth, 600);
+    this.cameras.main.startFollow(this.player);
+
+    // --- Charge bar ---
+    this.chargeBar = this.add.graphics().setScrollFactor(0);
   }
 
-  private handlePlayerHit(player: any, enemy: any): void {
+  // ===== NPC Dialogue =====
+  private startDialogue(): void {
+    if (this.isInDialogue || this.hasTalkedToNpc) return;
+    this.isInDialogue = true;
+    this.player.setVelocity(0);
+    this.player.anims.stop();
+
+    this.dialogueBox.setVisible(true);
+    this.dialogueText.setVisible(true);
+    this.currentLineIndex = 0;
+    this.dialogueText.setText(this.dialogueLines[this.currentLineIndex]);
+    this.input.keyboard!.on("keydown-SPACE", this.nextDialogueLine, this);
+  }
+
+  private nextDialogueLine(): void {
+    if (!this.isInDialogue) return;
+    this.currentLineIndex++;
+    if (this.currentLineIndex >= this.dialogueLines.length) {
+      this.endDialogue();
+      this.hasTalkedToNpc = true;
+    } else {
+      this.dialogueText.setText(this.dialogueLines[this.currentLineIndex]);
+    }
+  }
+
+  private endDialogue(): void {
+    this.isInDialogue = false;
+    this.dialogueBox.setVisible(false);
+    this.dialogueText.setVisible(false);
+    this.input.keyboard!.off("keydown-SPACE", this.nextDialogueLine, this);
+  }
+
+  // ===== Combat =====
+  private handleArrowHit(arrow: any, enemy: any): void {
+    if (!arrow || !arrow.body || !enemy || !enemy.body) return;
+    if (!arrow.active || !enemy.active) return;
+
+    const direction = arrow.body.velocity.x > 0 ? 1 : -1;
+    arrow.destroy();
+
+    enemy.health -= 1;
+    enemy.setTint(0xff0000);
+    this.time.delayedCall(150, () => enemy?.clearTint());
+
+    // --- Hiệu ứng đẩy lùi + rung camera ---
+    const knockbackForce = 300;
+    if (!enemy.isKnockedBack && enemy.active) {
+      enemy.isKnockedBack = true;
+      enemy.setVelocityX(direction * knockbackForce);
+
+      this.cameras.main.shake(100, 0.0002); // 👈 rung camera nhẹ
+
+      this.time.delayedCall(200, () => {
+        if (enemy.active) { 
+          enemy.setVelocityX(0);
+          enemy.isKnockedBack = false;
+        }
+      });
+    }
+
+    // --- Thanh máu ---
+    if (enemy.healthBar) {
+      const barWidth = 40;
+      const healthPercent = Phaser.Math.Clamp(
+        enemy.health / enemy.maxHealth,
+        0,
+        1
+      );
+      enemy.healthBar.clear();
+      enemy.healthBar.fillStyle(0xff0000);
+      enemy.healthBar.fillRect(
+        enemy.x - barWidth / 2,
+        enemy.y - 80,
+        barWidth * healthPercent,
+        5
+      );
+      enemy.healthBar.lineStyle(1, 0xffffff);
+      enemy.healthBar.strokeRect(
+        enemy.x - barWidth / 2,
+        enemy.y - 80,
+        barWidth,
+        5
+      );
+    }
+
+    if (enemy.health <= 0) {
+      enemy.healthBar?.destroy();
+      enemy.destroy();
+    }
+  }
+
+  private handlePlayerHit(): void {
     if (this.isInvincible || this.isGameOver) return;
 
     this.playerHealth -= 1;
@@ -176,58 +339,36 @@ export default class GameScene extends Scene {
       this.player.setVelocity(0);
       this.player.anims.stop();
 
-      this.gameOverText = this.add.text(
-        this.cameras.main.width / 2,
-        this.cameras.main.height / 2,
-        "Nhấn SPACE để chơi lại",
-        {
-          fontSize: "40px",
-          color: "#ffffff",
-          backgroundColor: "#000000",
-          padding: { x: 20, y: 10 },
-        }
-      ).setOrigin(0.5).setScrollFactor(0);
+      this.gameOverText = this.add
+        .text(
+          this.cameras.main.width / 2,
+          this.cameras.main.height / 2,
+          "Game Over! Nhấn SPACE để chơi lại",
+          {
+            fontSize: "40px",
+            color: "#ffffff",
+            backgroundColor: "#000000",
+          }
+        )
+        .setOrigin(0.5)
+        .setScrollFactor(0);
     } else {
       this.isInvincible = true;
       this.player.setTint(0xff0000);
       this.time.delayedCall(200, () => this.player.clearTint(), [], this);
-      this.time.delayedCall(1000, () => { this.isInvincible = false; }, [], this);
+      this.time.delayedCall(1000, () => (this.isInvincible = false), [], this);
       this.player.setVelocityY(-200);
-    }
-  }
-
-  private handleArrowHit(arrow: any, enemy: any): void {
-    arrow.destroy();
-    if (!enemy.health) enemy.health = 5; // phòng trường hợp chưa có biến
-
-    enemy.health -= 1;
-    enemy.setTint(0xff0000);
-    this.time.delayedCall(150, () => enemy.clearTint(), [], this);
-
-    // --- Cập nhật thanh máu ---
-    const barWidth = 40;
-    const healthPercent = enemy.health / enemy.maxHealth;
-    enemy.healthBar.clear();
-    enemy.healthBar.fillStyle(0xff0000);
-    enemy.healthBar.fillRect(enemy.x - barWidth / 2, enemy.y - 80, barWidth * healthPercent, 5);
-    enemy.healthBar.lineStyle(1, 0xffffff);
-    enemy.healthBar.strokeRect(enemy.x - barWidth / 2, enemy.y - 80, barWidth, 5);
-
-    if (enemy.health <= 0) {
-      enemy.healthBar.destroy();
-      enemy.destroy();
     }
   }
 
   update(): void {
     if (this.isGameOver) {
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!)) {
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!))
         window.location.reload();
-      }
       return;
     }
+    if (this.isInDialogue) return;
 
-    // --- Player move ---
     if (this.cursors.left?.isDown) {
       this.player.setVelocityX(-460);
       this.player.setFlipX(true);
@@ -241,11 +382,14 @@ export default class GameScene extends Scene {
       this.player.anims.stop();
     }
 
-    if ((this.cursors.up?.isDown || this.cursors.space?.isDown) && this.player.body.blocked.down) {
+    if (
+      (this.cursors.up?.isDown || this.cursors.space?.isDown) &&
+      this.player.body.blocked.down
+    ) {
       this.player.setVelocityY(-400);
     }
 
-    // --- Charge arrow ---
+    // --- Charge ---
     if (this.attackKey.isDown) {
       if (!this.isCharging) {
         this.isCharging = true;
@@ -255,14 +399,13 @@ export default class GameScene extends Scene {
     }
 
     if (Phaser.Input.Keyboard.JustUp(this.attackKey)) {
-      if (this.isCharging && this.chargePower >= 30) {
+      if (this.isCharging && this.chargePower >= 30)
         this.shootArrow(this.chargePower);
-      }
       this.isCharging = false;
       this.chargePower = 0;
     }
 
-    // --- Vẽ thanh lực ---
+    // --- Thanh lực ---
     this.chargeBar.clear();
     if (this.isCharging) {
       this.chargeBar.fillStyle(0x00ff00);
@@ -271,28 +414,41 @@ export default class GameScene extends Scene {
       this.chargeBar.strokeRect(16, 50, 200, 20);
     }
 
-    // --- Enemy follow player + cập nhật thanh máu ---
+    // --- Enemy logic ---
     this.enemies.getChildren().forEach((enemy: any) => {
-      if (!enemy.active) return;
+      if (!enemy || !enemy.active || !enemy.body) return;
 
-      if (this.player.x < enemy.x) {
-        enemy.setVelocityX(-100);
-        enemy.setFlipX(false);
-        enemy.play("enemy-walk-left", true);
+      if (!enemy.isKnockedBack) {
+        if (this.player.x < enemy.x) {
+          enemy.setVelocityX(-100);
+          enemy.setFlipX(false);
+          enemy.play("enemy-walk-left", true);
+        } else {
+          enemy.setVelocityX(100);
+          enemy.setFlipX(true);
+          enemy.play("enemy-walk-right", true);
+        }
       } else {
-        enemy.setVelocityX(100);
-        enemy.setFlipX(true);
-        enemy.play("enemy-walk-right", true);
+        enemy.anims.stop();
       }
 
-      // --- cập nhật vị trí thanh máu ---
       const barWidth = 40;
       const healthPercent = enemy.health / enemy.maxHealth;
       enemy.healthBar.clear();
       enemy.healthBar.fillStyle(0xff0000);
-      enemy.healthBar.fillRect(enemy.x - barWidth / 2, enemy.y - 80, barWidth * healthPercent, 5);
+      enemy.healthBar.fillRect(
+        enemy.x - barWidth / 2,
+        enemy.y - 80,
+        barWidth * healthPercent,
+        5
+      );
       enemy.healthBar.lineStyle(1, 0xffffff);
-      enemy.healthBar.strokeRect(enemy.x - barWidth / 2, enemy.y - 80, barWidth, 5);
+      enemy.healthBar.strokeRect(
+        enemy.x - barWidth / 2,
+        enemy.y - 80,
+        barWidth,
+        5
+      );
     });
   }
 
@@ -301,16 +457,11 @@ export default class GameScene extends Scene {
       this.player.x,
       this.player.y - 80,
       "arrow"
-    ) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-
+    ) as any;
     arrow.body.setAllowGravity(true);
-    const baseSpeed = 800;
-    const speed = (power / 100) * baseSpeed * (this.player.flipX ? -2 : 2);
+    const speed = (power / 100) * 800 * (this.player.flipX ? -2 : 2);
     arrow.setVelocityX(speed);
-
     if (this.player.flipX) arrow.setFlipX(true);
-    this.time.delayedCall(2000, () => {
-      if (arrow.active) arrow.destroy();
-    });
+    this.time.delayedCall(2000, () => arrow.destroy(), [], this);
   }
 }
