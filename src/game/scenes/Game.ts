@@ -142,35 +142,35 @@ export default class GameScene extends Scene {
   private hasTalkedToNpc: boolean = false;
 
   // Khai báo lại các hàm private để TypeScript/IDE nhận diện (Giữ cho TypeScript nhận diện)
-  private startDialogue(): void;
-  private nextDialogueLine(): void;
-  private endDialogue(): void;
-  private updateChargeAnimation(power: number): void;
-  private applyDamage(projectile: any, target: any, damage: number, knockback: number): void;
-  private handleArrowHit(arrow: any, target: any): void;
-  private handleUltimateHit(ultimateRocket: any, target: any): void;
-  private handleSoldierHit(soldier: any, target: any): void; // Va chạm Lính -> Địch
-  private handleEnemyContact(player: any, target: any): void; // Va chạm Player/Lính <- Địch
-  private handlePlayerHit(player: any, target: any): void; // Hàm cũ, ta sẽ đổi thành handleEnemyContact
-  private handleCoinCollect(player: any, coin: any): void; // Xử lý nhặt xu
-  private spawnBoss(): void;
-  private showLevelComplete(): void;
-  private startNextLevel(): void;
-  private updateManaBar(): void;
-  private updatePlayerHealthBar(): void;
-  private updateCoinUI(): void; // Cập nhật Xu UI
-  private spawnCoins(x: number, y: number, amount: number): void; // Hàm rơi xu
-  private findNearestEnemy(): GameCharacter | null;
-  private shootArrow(power: number): void;
-  private summonSoldier(): void;
-  private fireUltimateAttack(): void;
-  private damageCharacter(character: GameCharacter | Soldier, damage: number): void;
-  private updateHealthBar(char: GameCharacter | Soldier): void;
-  // ✨ THÊM KHAI BÁO CÁC HÀM MỚI ✨
-  private updateExpUI(): void;
-  private checkLevelUp(): void;
-  // ✨ KHAI BÁO HÀM MỚI ✨
-  private showNotification(message: string): void;
+  // private startDialogue(): void;
+  // private nextDialogueLine(): void;
+  // private endDialogue(): void;
+  // private updateChargeAnimation(power: number): void;
+  // private applyDamage(projectile: any, target: any, damage: number, knockback: number): void;
+  // private handleArrowHit(arrow: any, target: any): void;
+  // private handleUltimateHit(ultimateRocket: any, target: any): void;
+  // private handleSoldierHit(soldier: any, target: any): void; // Va chạm Lính -> Địch
+  // private handleEnemyContact(player: any, target: any): void; // Va chạm Player/Lính <- Địch
+  // private handlePlayerHit(player: any, target: any): void; // Hàm cũ, ta sẽ đổi thành handleEnemyContact
+  // private handleCoinCollect(player: any, coin: any): void; // Xử lý nhặt xu
+  // private spawnBoss(): void;
+  // private showLevelComplete(): void;
+  // private startNextLevel(): void;
+  // private updateManaBar(): void;
+  // private updatePlayerHealthBar(): void;
+  // private updateCoinUI(): void; // Cập nhật Xu UI
+  // private spawnCoins(x: number, y: number, amount: number): void; // Hàm rơi xu
+  // private findNearestEnemy(): GameCharacter | null;
+  // private shootArrow(power: number): void;
+  // private summonSoldier(): void;
+  // private fireUltimateAttack(): void;
+  // private damageCharacter(character: GameCharacter | Soldier, damage: number): void;
+  // private updateHealthBar(char: GameCharacter | Soldier): void;
+  // // ✨ THÊM KHAI BÁO CÁC HÀM MỚI ✨
+  // private updateExpUI(): void;
+  // private checkLevelUp(): void;
+  // // ✨ KHAI BÁO HÀM MỚI ✨
+  // private showNotification(message: string): void;
 
   // Kết thúc khai báo
 
@@ -1261,7 +1261,7 @@ export default class GameScene extends Scene {
     // THÊM ĐIỀU KIỆN KIỂM TRA MANA: this.playerMana >= this.ULTIMATE_COST
     const canUseUltimate = this.playerMana >= this.ULTIMATE_COST;
     // ✨ THÊM ĐIỀU KIỆN CẤP ĐỘ 5 ✨
-    const canUnlockUltimate = this.playerLevel >= 5;
+    const canUnlockUltimate = this.playerLevel >= 2;
     //     const isUltimateCharging = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging && canUseUltimate; 
 
     // PHẢI KIỂM TRA CẤP ĐỘ (canUnlockUltimate) NGAY Ở ĐÂY
@@ -1306,7 +1306,7 @@ export default class GameScene extends Scene {
     //     }
 
     // Kích hoạt chiêu Triệu hồi lính (Nút D)
-    const canSummonSoldier = this.playerLevel >= 7; // ✨ ĐIỀU KIỆN CẤP ĐỘ 7 ✨
+    const canSummonSoldier = this.playerLevel >= 2; // ✨ ĐIỀU KIỆN CẤP ĐỘ 7 ✨
 
     if (Phaser.Input.Keyboard.JustDown(this.soldierKey) && !this.isCharging && !this.isUltimateCharging) {
       if (canSummonSoldier) {
