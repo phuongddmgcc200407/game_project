@@ -6,7 +6,7 @@ import MainMenu from './scenes/MainMenu';
 import GameScene from './scenes/Game';
 import GameOver from './scenes/GameOver';
 // ✨ THÊM: Import LobbyScene
-import LobbyScene from './scenes/lobby';
+import LobbyScene from './scenes/Lobby';
 
 export default function StartGame(parentId: string) {
     const config: Phaser.Types.Core.GameConfig = {
