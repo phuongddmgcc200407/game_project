@@ -35,7 +35,7 @@ export default class MainMenu extends Scene {
 
    // SỬA LỖI: Truy cập KeyboardPlugin một cách an toàn và rõ ràng
 this.input.keyboard!.once('keydown-SPACE', () => { // Thêm dấu ! (Non-null assertion)
-    this.scene.start('Game');
+    this.scene.start('Lobby');
 });
   }
 }
