@@ -247,7 +247,7 @@ export default class LobbyScene extends Scene {
         this.promptText = this.add.text(
             camWidth / 2,
             promptTextY,
-            "Sẵn sàng? (Y/N)",
+            "",
             { fontSize: '24px', color: '#ffff00', backgroundColor: '#000000' }
         ).setOrigin(0.5)
             .setScrollFactor(0)
