@@ -31,6 +31,16 @@ export default class LobbyScene extends Scene {
     private dinhLeNameText!: Phaser.GameObjects.Text;
     private nguyenXiNameText!: Phaser.GameObjects.Text; // ✨ THÊM TÊN NGUYỄN XÍ
 
+    // ✨ BIẾN MỚI: UI Hướng dẫn chơi
+private guideText!: Phaser.GameObjects.Text; 
+private guideBox!: Phaser.GameObjects.Rectangle;
+
+// ✨ BIẾN MỚI: Trạng thái hướng dẫn
+private isShowingGuide: boolean = false; 
+
+// Khai báo phím mới
+private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space để tiếp tục
+
     // Trạng thái game
     private isInDialogue: boolean = false;
     private interactionKey!: Phaser.Input.Keyboard.Key;
@@ -262,9 +272,81 @@ export default class LobbyScene extends Scene {
             { fontSize: '18px', color: '#ffffff', backgroundColor: '#000000' }
         ).setOrigin(0.5).setVisible(false);
 
+        // ✨ THIẾT LẬP UI HƯỚNG DẪN ✨
+        this.guideBox = this.add
+            .rectangle(camWidth / 2, camHeight / 2, camWidth * 0.6, camHeight * 0.5, 0x000000, 0.9) // Độ trong suốt cao hơn
+            .setOrigin(0.5)
+            .setScrollFactor(0)
+            .setStrokeStyle(4, 0xffd700) // Viền màu vàng
+            .setDepth(20)
+            .setVisible(false);
+            
+        this.guideText = this.add
+            .text(camWidth / 2, camHeight / 2 - (camHeight * 0.5) / 2 + 20, "", {
+                // Tăng kích thước chữ, sử dụng font monospace để căn chỉnh
+                fontSize: "26px",
+                color: "#e8e8e8",
+                fontFamily: 'monospace',
+                wordWrap: { width: camWidth * 0.6 - 40 },
+                lineSpacing: 10,
+                align: 'left'
+            })
+            .setOrigin(0.5, 0)
+            .setScrollFactor(0)
+            .setDepth(21) // Đảm bảo text nằm trên box
+            .setVisible(false);
+
+        this.showGameGuide(); // Kích hoạt hướng dẫn khi bắt đầu
+
         // 9. Va chạm giữa Player/NPC (Giữ nguyên)
         this.physics.add.collider(this.player, this.npcQuest);
         this.physics.add.collider(this.player, this.npcShop);
+    }
+
+     // ✨ HÀM HIỂN THỊ HƯỚNG DẪN CHƠI ✨
+    private showGameGuide(): void {
+        this.isShowingGuide = true;
+        this.player.body.setVelocity(0, 0);
+        this.player.anims.stop();
+        
+        // Dừng nhạc nền tạm thời (nếu đang chạy)
+        if (this.bgMusic.isPlaying) {
+            this.bgMusic.pause();
+        }
+
+        this.guideBox.setVisible(true);
+        this.guideText.setVisible(true);
+
+        const guideContent = 
+            "***HƯỚNG DẪN CƠ BẢN***\n\n" +
+            "⬅️ ➡️: Di chuyển (Trái/Phải)\n" +
+            "[SPACE]: Nhảy\n" +
+            "[X]: Tương tác với NPC (Đinh Lễ, Nguyễn Xí)\n" +
+            "Giữ [A]: Bắn Mũi Tên (Tấn công cơ bản)\n" +
+            "Giữ [S]: Sử dụng Kỹ Năng Đặc Biệt (Ultimate)\n" +
+            "Ấn [D]: Để triệu hồi lính\n" +
+            "Ấn [C]: Để xem chỉ số nhân vật\n" +
+            "[ESC]: Tạm Dừng Game (Pause)\n\n" +
+            "Ấn [ENTER] để bắt đầu du hành cùng tướng quân Lê Lợi!";
+
+        this.guideText.setText(guideContent);
+
+        // Đợi phím Enter được nhấn để đóng hướng dẫn
+        this.input.keyboard!.once('keydown-ENTER', this.hideGameGuide, this);
+    }
+    
+    // ✨ HÀM ẨN HƯỚNG DẪN CHƠI ✨
+    private hideGameGuide(): void {
+        this.isShowingGuide = false;
+        this.guideBox.setVisible(false);
+        this.guideText.setVisible(false);
+        
+        // Chạy lại nhạc nền (nếu bị dừng)
+        if (!this.bgMusic.isPlaying) {
+            this.bgMusic.resume();
+        }
+        
+        // Cho phép Player di chuyển trở lại
     }
 
     update(): void {
@@ -275,11 +357,14 @@ export default class LobbyScene extends Scene {
         this.nguyenXiNameText.x = this.npcShop.x;
         this.nguyenXiNameText.y = this.npcShop.y - this.npcShop.height - 10;
 
-        if (this.isInDialogue) {
+        // BỎ QUA MỌI XỬ LÝ NẾU ĐANG TRONG HỘI THOẠI HOẶC HƯỚNG DẪN
+        if (this.isInDialogue || this.isShowingGuide) { // ✨ KIỂM TRA TRẠNG THÁI HƯỚNG DẪN
             this.player.body.setVelocityX(0);
             this.player.anims.stop();
             return;
         }
+
+        
 
         this.handlePlayerMovement();
         this.handleNPCInteraction();

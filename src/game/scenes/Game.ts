@@ -261,11 +261,11 @@ export default class GameScene extends Scene {
     this.ground.create(600, 900, "ground").setScale(300, 6).refreshBody();
 
     // --- Phát nhạc nền ---
-    this.bgMusic = this.sound.add('bgMusic', { volume: 0.3, loop: true });
+    this.bgMusic = this.sound.add('bgMusic', { volume: 0.2});
     this.bgMusic.play();
 
     // 🔊 Tạo đối tượng âm thanh bắn cung
-    this.shootSound = this.sound.add("shoot", { volume: 0.6 });
+    this.shootSound = this.sound.add("shoot", { volume: 4.5 });
 
     // --- Player ---
     this.player = this.physics.add.sprite(200, 650, "leloi1");
@@ -487,8 +487,10 @@ export default class GameScene extends Scene {
 
     // ✨ KHỞI TẠO COIN GROUP
     this.coins = this.physics.add.group();
-    this.physics.add.collider(this.coins, this.ground); // Xu rơi xuống đất
-    this.physics.add.overlap(this.player, this.coins, this.handleCoinCollect, undefined, this); // Player nhặt xu
+    // ✨ THAY THẾ COLLIDER DÙNG CALLBACK ✨
+this.physics.add.collider(this.coins, this.ground, this.stopCoinMovement, undefined, this); 
+this.physics.add.overlap(this.player, this.coins, this.handleCoinCollect, undefined, this); // Player nhặt xu
+
 
     // THÊM: Khởi tạo Group cho Quân lính
     this.soldiers = this.physics.add.group({
@@ -775,24 +777,28 @@ export default class GameScene extends Scene {
   }
 
   // Hàm rơi Xu mới
-  private spawnCoins(x: number, y: number, amount: number): void {
-    for (let i = 0; i < amount; i++) {
-      // Rơi ra 1-2 xu mỗi lần
-      const coinValue = Phaser.Math.Between(1, 2);
+  // Trong GameScene.ts
+private spawnCoins(x: number, y: number, amount: number): void {
+    for (let i = 0; i < amount; i++) {
+        // Rơi ra 1-2 xu mỗi lần
+        const coinValue = Phaser.Math.Between(1, 2); 
+        
+        const coin = this.coins.create(x, y - 50, 'coin') as Coin;
+        coin.value = coinValue;
+        coin.setScale(0.5); // Giảm kích thước xu
+        
+        // ✨ SỬA LỖI: LOẠI BỎ LỰC ĐẨY VÀ XOAY ✨
+        
+        // Thay vì dùng lực đẩy, chỉ set vận tốc Y ban đầu nhẹ (để nó rơi)
+        const initialVelocityY = Phaser.Math.Between(-10, 50); // Chỉ để nó bắt đầu rơi
+        const initialVelocityX = Phaser.Math.Between(-50, 50); // Lực đẩy X rất nhỏ để phân tán nhẹ
 
-      const coin = this.coins.create(x, y - 50, 'coin') as Coin;
-      coin.value = coinValue;
-      coin.setScale(0.5); // Giảm kích thước xu
-
-      // Thêm lực đẩy nhẹ ngẫu nhiên để xu bay ra
-      const forceX = Phaser.Math.Between(-100, 100);
-      const forceY = Phaser.Math.Between(-200, -100);
-      coin.setVelocity(forceX, forceY);
-
-      // Xu xoay nhẹ khi rơi
-      coin.setAngularVelocity(Phaser.Math.Between(-180, 180));
-    }
-  }
+        coin.setVelocity(initialVelocityX, initialVelocityY);
+        
+        // Đảm bảo không có vận tốc góc
+        coin.setAngularVelocity(0); 
+    }
+}
 
 
   // Hàm xử lý sát thương Enemy/Boss VÀ THÊM LOGIC RƠI XU
@@ -851,7 +857,7 @@ export default class GameScene extends Scene {
       this.checkLevelUp(); // Gọi hàm kiểm tra lên cấp và cập nhật UI
 
       // ✨ LOGIC RƠI XU KHI ĐỊCH CHẾT
-      const coinDropAmount = enemy.isBoss ? Phaser.Math.Between(8, 12) : Phaser.Math.Between(2, 4);
+      const coinDropAmount = enemy.isBoss ? Phaser.Math.Between(5, 8) : Phaser.Math.Between(2, 4);
       this.spawnCoins(enemyX, enemyY, coinDropAmount);
 
       // Logic cộng điểm & Mana (Giữ nguyên)
@@ -1802,5 +1808,26 @@ export default class GameScene extends Scene {
       // Ví dụ: tính lại baseMaxHealth = 5 + (this.playerLevel - 1) * 0.5
     }
   }
+
+  // Trong GameScene.ts, hàm private stopCoinMovement:
+
+private stopCoinMovement(coinObj: any, groundObj: any): void {
+    const coin = coinObj as Coin;
+    
+    // Đảm bảo coin vẫn đang hoạt động và đang chạm đất
+    if (coin.active && coin.body.blocked.down) {
+        // Dừng mọi vận tốc
+        coin.setVelocity(0, 0);
+        coin.setAngularVelocity(0);
+        
+        // Vô hiệu hóa ảnh hưởng của lực bên ngoài
+        coin.setImmovable(false); 
+        
+        // Ngăn chặn đồng xu bị đẩy bởi Player hoặc vật thể khác
+        // ✨ SỬA LỖI: DÙNG THUỘC TÍNH .pushable = false ✨
+        (coin.body as Phaser.Physics.Arcade.Body).pushable = false;
+        // -----------------------------------------------------
+    }
+}
 
 }
