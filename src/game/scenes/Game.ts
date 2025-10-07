@@ -258,7 +258,7 @@ export default class GameScene extends Scene {
 
     // --- Ground ---
     this.ground = this.physics.add.staticGroup();
-    this.ground.create(600, 850, "ground").setScale(300, 6).refreshBody();
+    this.ground.create(600, 900, "ground").setScale(300, 6).refreshBody();
 
     // --- Phát nhạc nền ---
     this.bgMusic = this.sound.add('bgMusic', { volume: 0.3, loop: true });
@@ -286,7 +286,7 @@ export default class GameScene extends Scene {
     });
 
     // --- NPC --- (Nguyễn Trãi)
-    this.npc = this.physics.add.sprite(400, 725, "nt1"); // ✨ SỬ DỤNG FRAME NT1 BAN ĐẦU
+    this.npc = this.physics.add.sprite(400, 775, "nt1"); // ✨ SỬ DỤNG FRAME NT1 BAN ĐẦU
     this.npc.setImmovable(true);
     this.npc.body.allowGravity = false;
     this.physics.add.collider(this.npc, this.ground);
@@ -433,7 +433,7 @@ export default class GameScene extends Scene {
 
     // ✨ KHỞI TẠO COIN UI
     this.playerCoins = 0; // Bắt đầu với 0 xu
-    this.coinText = this.add.text(16, 100, `Xu: ${this.playerCoins}`, {
+    this.coinText = this.add.text(16, 160, `Xu: ${this.playerCoins}`, {
       fontSize: '20px',
       color: '#ffdd00',
       backgroundColor: '#000000',
@@ -443,7 +443,7 @@ export default class GameScene extends Scene {
     // ----------------------
 
     // ✨ THÊM KHỞI TẠO EXP UI VÀ LEVEL DISPLAY ✨
-    this.expText = this.add.text(16, 140, `Cấp ${this.playerLevel} | EXP: 0/10`, {
+    this.expText = this.add.text(16, 200, `Cấp ${this.playerLevel} | EXP: 0/10`, {
       fontSize: '20px',
       color: '#aaffaa', // Màu xanh nhạt cho EXP
       backgroundColor: '#000000',
@@ -550,7 +550,7 @@ export default class GameScene extends Scene {
   private updatePlayerHealthBar(): void {
     const healthPercent = this.playerHealth / this.MAX_PLAYER_HEALTH;
     const barX = 16;
-    const barY = 16;
+    const barY = 80;
     const barWidth = 200;
     const barHeight = 15;
 
@@ -578,7 +578,7 @@ export default class GameScene extends Scene {
   private updateManaBar(): void {
     const manaPercent = this.playerMana / this.maxMana;
     const barX = 16;
-    const barY = 50;
+    const barY = 110;
     const barWidth = 200;
     const barHeight = 15; // Chiều cao thanh Mana
 
@@ -1323,7 +1323,7 @@ export default class GameScene extends Scene {
 
     // --- Cập nhật Charge Bar (Đẩy xuống dưới Mana Bar) ---
     this.chargeBar.clear();
-    const chargeBarY = 70; // Vị trí mới, ngay dưới Mana Bar (50+15=65, chọn 70 cho khoảng cách)
+    const chargeBarY = 130; // Vị trí mới, ngay dưới Mana Bar (50+15=65, chọn 70 cho khoảng cách)
     const cooldownBarY = 100;
 
     if (this.isCharging) {

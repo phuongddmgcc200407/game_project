@@ -113,12 +113,12 @@ export default class LobbyScene extends Scene {
 
         // 2. TẠO GROUND 
         this.ground = this.physics.add.staticGroup();
-        const GROUND_Y_POS = 850;
-        this.ground.create(camWidth / 2, GROUND_Y_POS, "ground").setScale(10, 7).refreshBody();
+        const GROUND_Y_POS = 950;
+        this.ground.create(camWidth / 2, GROUND_Y_POS, "ground").setScale(10, 10).refreshBody();
 
         // VỊ TRÍ Y ĐỨNG
         const playerStartY = 650;
-        const npcStartY = 780;
+        const npcStartY = 840;
 
         // 3. THÊM HOẠT ẢNH
         this.anims.create({
