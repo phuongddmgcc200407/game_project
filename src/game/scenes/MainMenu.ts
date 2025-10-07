@@ -5,20 +5,37 @@ export default class MainMenu extends Scene {
     super('MainMenu');
   }
 
+  preload(): void {
+    // 🔹 Nạp ảnh nền
+    this.load.image('bg_mainmenu', 'assets/bg_mainmenu.jpg');
+  }
+
   create(): void {
     const { width, height } = this.scale;
-    this.add.text(width / 2, height / 2 - 100, 'Hành Trình Anh Hùng Việt', {
-      font: '28px Arial',
-      color: '#FFD700',
-    }).setOrigin(0.5);
 
-    const startText = this.add.text(width / 2, height / 2, 'Bấm SPACE để bắt đầu', {
-      font: '20px Arial',
-      color: '#ffffff',
-    }).setOrigin(0.5);
+    // 🔹 Thêm ảnh nền (phải thêm trước text để nằm phía sau)
+    const bg = this.add.image(width / 2, height / 2, 'bg_mainmenu');
+    bg.setDisplaySize(width, height); // co giãn vừa toàn màn hình
 
+    
+      // 🔹 Dòng hướng dẫn
+      const startText = this.add.text(width / 2, height / 2 + 300, 'Bấm SPACE để bắt đầu', {
+        font: '20px Arial', 
+        color: '#ffffff',
+      }).setOrigin(0.5);
+
+    // 🔹 Hiệu ứng nhấp nháy nhẹ cho dòng hướng dẫn
+    this.tweens.add({
+      targets: startText,
+      alpha: { from: 1, to: 0.3 },
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+    });
+
+    // 🔹 Khi nhấn phím SPACE → vào GameScene
     this.input.keyboard.once('keydown-SPACE', () => {
-      this.scene.start('Game');
+      this.scene.start('Lobby');
     });
   }
 }
