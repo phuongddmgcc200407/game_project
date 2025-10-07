@@ -4,7 +4,7 @@ import Boot from './scenes/Boot';
 import Preloader from './scenes/Preloader';
 import MainMenu from './scenes/MainMenu';
 import GameScene from './scenes/Game';
-import GameOver from './scenes/GameOver';
+// import GameOver from './scenes/GameOver';
 // ✨ THÊM: Import LobbyScene
 import LobbyScene from './scenes/Lobby';
 
@@ -17,12 +17,12 @@ export default function StartGame(parentId: string) {
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 600 }, 
+                gravity: {x:100, y: 600 }, 
                 debug: false          
             }
         }
         ,
-        scene: [Boot, Preloader, MainMenu, LobbyScene, GameScene, GameOver],
+        scene: [Boot, Preloader, MainMenu, LobbyScene, GameScene],
     };
 
     return new Phaser.Game(config);

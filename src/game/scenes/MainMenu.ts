@@ -33,9 +33,9 @@ export default class MainMenu extends Scene {
       repeat: -1,
     });
 
-    // 🔹 Khi nhấn phím SPACE → vào GameScene
-    this.input.keyboard.once('keydown-SPACE', () => {
-      this.scene.start('Lobby');
-    });
+   // SỬA LỖI: Truy cập KeyboardPlugin một cách an toàn và rõ ràng
+this.input.keyboard!.once('keydown-SPACE', () => { // Thêm dấu ! (Non-null assertion)
+    this.scene.start('Lobby');
+});
   }
 }
