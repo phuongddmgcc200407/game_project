@@ -189,6 +189,7 @@ export default class GameScene extends Scene {
     // ✨ TẢI HÌNH ẢNH COIN (Tạm dùng arrow nếu chưa có sprite coin riêng)
     this.load.image('coin', 'assets/coin.png');
 
+
     // --- Frames Lê Lợi ---
     this.load.image('leloi1', '../assets/lt1.png');
     this.load.image('leloi2', '../assets/lt2.png');
@@ -197,6 +198,8 @@ export default class GameScene extends Scene {
     this.load.image('leloi5', '../assets/lt5.png');
     this.load.image('leloi6', '../assets/lt6.png');
     this.load.image('leloi7', '../assets/lt7.png');
+
+
 
     // --- Frames soldier ---
     this.load.image('ls1', '../assets/ls1.png');
@@ -261,7 +264,7 @@ export default class GameScene extends Scene {
     this.ground.create(600, 900, "ground").setScale(300, 6).refreshBody();
 
     // --- Phát nhạc nền ---
-    this.bgMusic = this.sound.add('bgMusic', { volume: 0.2});
+    this.bgMusic = this.sound.add('bgMusic', { volume: 0.2 });
     this.bgMusic.play();
 
     // 🔊 Tạo đối tượng âm thanh bắn cung
@@ -273,6 +276,38 @@ export default class GameScene extends Scene {
     this.player.setCollideWorldBounds(true);
     this.player.setOrigin(0.5, 1);
     this.physics.add.collider(this.player, this.ground);
+
+    // ✨ ĐỊNH NGHĨA HOẠT ẢNH BOSS ✨
+    this.anims.create({
+      key: "boss-walk-left",
+      frames: [
+        { key: "boss1" },
+        { key: "boss2" },
+        { key: "boss3" },
+        { key: "boss4" },
+        { key: "boss5" },
+        { key: "boss6" },
+        { key: "boss7" },
+      ],
+      frameRate: 6, // Tốc độ chậm hơn (điều chỉnh theo ý bạn)
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "boss-walk-right",
+      frames: [
+        { key: "boss1" }, // Dùng chung frames
+        { key: "boss2" },
+        { key: "boss3" },
+        { key: "boss4" },
+        { key: "boss5" },
+        { key: "boss6" },
+        { key: "boss7" },
+      ],
+      frameRate: 6,
+      repeat: -1,
+    });
+    // ------------------------------------
 
     // ✨ TẠO HOẠT ẢNH CHO NGUYỄN TRÃI
     this.anims.create({
@@ -421,6 +456,7 @@ export default class GameScene extends Scene {
 
     this.physics.add.collider(this.enemies, this.ground);
 
+
     // --- UI ---
 
     // Khởi tạo Player Health Bar
@@ -432,7 +468,7 @@ export default class GameScene extends Scene {
     this.updateManaBar();
 
     // ✨ KHỞI TẠO COIN UI
-    this.playerCoins = 0; // Bắt đầu với 0 xu
+    // this.playerCoins = 0; // Bắt đầu với 0 xu
     this.coinText = this.add.text(16, 160, `Xu: ${this.playerCoins}`, {
       fontSize: '20px',
       color: '#ffdd00',
@@ -488,8 +524,8 @@ export default class GameScene extends Scene {
     // ✨ KHỞI TẠO COIN GROUP
     this.coins = this.physics.add.group();
     // ✨ THAY THẾ COLLIDER DÙNG CALLBACK ✨
-this.physics.add.collider(this.coins, this.ground, this.stopCoinMovement, undefined, this); 
-this.physics.add.overlap(this.player, this.coins, this.handleCoinCollect, undefined, this); // Player nhặt xu
+    this.physics.add.collider(this.coins, this.ground, this.stopCoinMovement, undefined, this);
+    this.physics.add.overlap(this.player, this.coins, this.handleCoinCollect, undefined, this); // Player nhặt xu
 
 
     // THÊM: Khởi tạo Group cho Quân lính
@@ -654,7 +690,7 @@ this.physics.add.overlap(this.player, this.coins, this.handleCoinCollect, undefi
     this.isInDialogue = false;
     this.dialogueBox.setVisible(false);
     this.dialogueText.setVisible(false);
-    this.input.keyboard!.off("keydown-SPACE", this.nextDialogueLine, this);
+    this.input.keyboard!.off("keydown-SPACE", this.nextDialogueLine, this); 
   }
 
   // --- Combat/Interaction Logic ---
@@ -778,27 +814,27 @@ this.physics.add.overlap(this.player, this.coins, this.handleCoinCollect, undefi
 
   // Hàm rơi Xu mới
   // Trong GameScene.ts
-private spawnCoins(x: number, y: number, amount: number): void {
-    for (let i = 0; i < amount; i++) {
-        // Rơi ra 1-2 xu mỗi lần
-        const coinValue = Phaser.Math.Between(1, 2); 
-        
-        const coin = this.coins.create(x, y - 50, 'coin') as Coin;
-        coin.value = coinValue;
-        coin.setScale(0.5); // Giảm kích thước xu
-        
-        // ✨ SỬA LỖI: LOẠI BỎ LỰC ĐẨY VÀ XOAY ✨
-        
-        // Thay vì dùng lực đẩy, chỉ set vận tốc Y ban đầu nhẹ (để nó rơi)
-        const initialVelocityY = Phaser.Math.Between(-10, 50); // Chỉ để nó bắt đầu rơi
-        const initialVelocityX = Phaser.Math.Between(-50, 50); // Lực đẩy X rất nhỏ để phân tán nhẹ
+  private spawnCoins(x: number, y: number, amount: number): void {
+    for (let i = 0; i < amount; i++) {
+      // Rơi ra 1-2 xu mỗi lần
+      const coinValue = Phaser.Math.Between(1, 2);
 
-        coin.setVelocity(initialVelocityX, initialVelocityY);
-        
-        // Đảm bảo không có vận tốc góc
-        coin.setAngularVelocity(0); 
-    }
-}
+      const coin = this.coins.create(x, y - 50, 'coin') as Coin;
+      coin.value = coinValue;
+      coin.setScale(0.5); // Giảm kích thước xu
+
+      // ✨ SỬA LỖI: LOẠI BỎ LỰC ĐẨY VÀ XOAY ✨
+
+      // Thay vì dùng lực đẩy, chỉ set vận tốc Y ban đầu nhẹ (để nó rơi)
+      const initialVelocityY = Phaser.Math.Between(-10, 50); // Chỉ để nó bắt đầu rơi
+      const initialVelocityX = Phaser.Math.Between(-50, 50); // Lực đẩy X rất nhỏ để phân tán nhẹ
+
+      coin.setVelocity(initialVelocityX, initialVelocityY);
+
+      // Đảm bảo không có vận tốc góc
+      coin.setAngularVelocity(0);
+    }
+  }
 
 
   // Hàm xử lý sát thương Enemy/Boss VÀ THÊM LOGIC RƠI XU
@@ -947,10 +983,15 @@ private spawnCoins(x: number, y: number, amount: number): void {
     const bossX = this.mapWidth - 100;
     const bossY = 725;
 
-    const boss = this.enemies.create(bossX, bossY, "boss") as GameCharacter;
+    const boss = this.enemies.create(bossX, bossY, "boss1") as GameCharacter;
+    boss.body.allowGravity = true; // Đảm bảo trọng lực BẬT
     boss.setCollideWorldBounds(true);
     boss.setBounce(0.1);
     boss.setOrigin(0.5, 1);
+
+    // ✨ BẮT ĐẦU CHẠY HOẠT ẢNH BOSS ✨
+    // Giả sử Boss ban đầu di chuyển sang trái (hướng về player)
+    boss.play("boss-walk-left", true);
 
     boss.maxHealth = bossHealth; // Áp dụng HP mới
     boss.health = bossHealth;    // Áp dụng HP mới
@@ -1267,7 +1308,7 @@ private spawnCoins(x: number, y: number, amount: number): void {
     // THÊM ĐIỀU KIỆN KIỂM TRA MANA: this.playerMana >= this.ULTIMATE_COST
     const canUseUltimate = this.playerMana >= this.ULTIMATE_COST;
     // ✨ THÊM ĐIỀU KIỆN CẤP ĐỘ 5 ✨
-    const canUnlockUltimate = this.playerLevel >= 2;
+    const canUnlockUltimate = this.playerLevel >= 4;
     //     const isUltimateCharging = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging && canUseUltimate; 
 
     // PHẢI KIỂM TRA CẤP ĐỘ (canUnlockUltimate) NGAY Ở ĐÂY
@@ -1286,7 +1327,7 @@ private spawnCoins(x: number, y: number, amount: number): void {
     } else if (this.ultimateKey.isDown && !canUnlockUltimate) {
       // Báo hiệu chưa mở khóa (ví dụ: nháy màu xanh dương)
       this.player.setTint(0x00aaff);
-      this.showNotification("Bạn cần đạt cấp 5 để sử dụng hỏa tiễn!");
+      this.showNotification("Bạn cần đạt cấp 4 để sử dụng hỏa tiễn!");
     } else if (this.ultimateKey.isDown && !canUseUltimate) {
       // Hiệu ứng báo không đủ mana (Chỉ cần set tint đỏ/nhấp nháy)
       this.player.setTint(0xcc0000);
@@ -1312,7 +1353,7 @@ private spawnCoins(x: number, y: number, amount: number): void {
     //     }
 
     // Kích hoạt chiêu Triệu hồi lính (Nút D)
-    const canSummonSoldier = this.playerLevel >= 2; // ✨ ĐIỀU KIỆN CẤP ĐỘ 7 ✨
+    const canSummonSoldier = this.playerLevel >= 5; // ✨ ĐIỀU KIỆN CẤP ĐỘ 5 ✨
 
     if (Phaser.Input.Keyboard.JustDown(this.soldierKey) && !this.isCharging && !this.isUltimateCharging) {
       if (canSummonSoldier) {
@@ -1320,7 +1361,7 @@ private spawnCoins(x: number, y: number, amount: number): void {
       } else {
         // Hiệu ứng báo chưa mở khóa (ví dụ: nháy màu xanh lá)
         this.player.setTint(0x00ff00);
-        this.showNotification("Bạn cần đạt cấp 7 để triệu hồi lính!");
+        this.showNotification("Bạn cần đạt cấp 5 để triệu hồi lính!");
         this.time.delayedCall(100, () => this.player.clearTint());
       }
     }
@@ -1351,34 +1392,50 @@ private spawnCoins(x: number, y: number, amount: number): void {
       this.chargeBar.fillRect(16, cooldownBarY, 200, 15);
       this.add.text(18, cooldownBarY, cooldownText, { fontSize: '12px', color: '#000000' }).setScrollFactor(0).setDepth(1);
     }
-    // --- Enemy/Boss movement và Health Bar Update (Giữ nguyên) ---
+    // --- ENEMY/BOSS MOVEMENT VÀ HOẠT ẢNH (ĐÃ TỔNG HỢP & SỬA LỖI) ---
     this.enemies.getChildren().forEach((target: any) => {
       const enemy = target as GameCharacter;
       if (!enemy || !enemy.active || !enemy.body) return;
 
       const isBoss = enemy.isBoss;
-      // Lấy sát thương của Boss để xác định tốc độ di chuyển
+
+      // ✨ TÍNH TOÁN TỐC ĐỘ (Chỉ tính 1 lần)
       const bossDamage = isBoss ? (enemy as any).damage : 0;
-      const moveSpeed = isBoss ? (100 + bossDamage * 10) : 100; // Tăng tốc độ Boss nhẹ
+      const moveSpeed = isBoss ? (100 + bossDamage * 10) : 100;
 
       if (!enemy.isKnockedBack) {
         if (this.player.x < enemy.x) {
           enemy.setVelocityX(-moveSpeed);
           enemy.setFlipX(false);
-          if (!isBoss) enemy.play("enemy-walk-left", true);
+
+          // ✨ CHỌN HOẠT ẢNH ĐÚNG ✨
+          if (isBoss) {
+            enemy.play("boss-walk-left", true);
+          } else {
+            enemy.play("enemy-walk-left", true);
+          }
         } else {
           enemy.setVelocityX(moveSpeed);
           enemy.setFlipX(true);
-          if (!isBoss) enemy.play("enemy-walk-right", true);
+
+          // ✨ CHỌN HOẠT ẢNH ĐÚNG ✨
+          if (isBoss) {
+            enemy.play("boss-walk-right", true);
+          } else {
+            enemy.play("enemy-walk-right", true);
+          }
         }
       } else {
         enemy.anims.stop();
+        if (isBoss) {
+          enemy.setTexture("boss1");
+        }
       }
 
-      // Cập nhật thanh máu
+      // Cập nhật thanh máu (Giữ nguyên)
       const barWidth = isBoss ? 100 : 40;
       const barHeight = isBoss ? 10 : 5;
-      const yOffset = isBoss ? -140 : -120; // Đã chỉnh lên cao hơn
+      const yOffset = isBoss ? -140 : -120;
       const healthPercent = enemy.health / enemy.maxHealth;
 
       enemy.healthBar.clear();
@@ -1403,27 +1460,34 @@ private spawnCoins(x: number, y: number, amount: number): void {
         const speed = 150; // Tốc độ di chuyển của lính
         const targetX = soldier.target.x;
 
-        if (soldier.x < targetX - 5) {
-          soldier.setVelocityX(speed);
-          soldier.setFlipX(false); // Lính quay về phía trước
-          // BỔ SUNG: Phát hoạt ảnh đi bộ
-          soldier.play("soldier-walk", true);
-        } else if (soldier.x > targetX + 5) {
-          soldier.setVelocityX(-speed);
-          soldier.setFlipX(true); // Lính quay về phía sau
-          // BỔ SUNG: Phát hoạt ảnh đi bộ
+        // Tính toán khoảng cách (chúng ta dùng 5px làm ngưỡng đứng yên)
+        const distanceToTarget = Math.abs(soldier.x - targetX);
+        const isCloseEnough = distanceToTarget <= 5;
+
+        if (distanceToTarget > 5) { // Nếu còn xa mục tiêu
+          // Di chuyển
+          const direction = soldier.x < targetX ? speed : -speed;
+          soldier.setVelocityX(direction);
+          soldier.setFlipX(direction < 0);
+
+          // ✨ CHẠY HOẠT ẢNH KHI DI CHUYỂN ✨
           soldier.play("soldier-walk", true);
         } else {
+          // Đã gần mục tiêu (Đứng yên/Tấn công tại chỗ)
           soldier.setVelocityX(0);
-          // DỪNG HOẠT ẢNH KHI ĐỨNG YÊN
+
+          // ✨ DỪNG HOẠT ẢNH KHI ĐỨNG YÊN ✨
           soldier.anims.stop();
-          soldier.setTexture('ls1');
+          soldier.setTexture('ls1'); // Khôi phục frame đứng yên
         }
+
         // Cập nhật thanh máu của lính theo vị trí
         this.updateHealthBar(soldier);
       } else {
         // Nếu không có mục tiêu, lính đứng yên
         soldier.setVelocityX(0);
+
+        // ✨ DỪNG HOẠT ẢNH KHI KHÔNG CÓ MỤC TIÊU ✨
         soldier.anims.stop();
         soldier.setTexture('ls1');
       }
@@ -1508,10 +1572,10 @@ private spawnCoins(x: number, y: number, amount: number): void {
     scoreText.setText(`Tổng điểm: ${this.totalScore}`);
 
     // Cập nhật trạng thái mở khóa
-    ultStatus.setText(`Hỏa tiễn (S): ${this.ultimateUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần Cấp 5`}`)
+    ultStatus.setText(`Hỏa tiễn (S): ${this.ultimateUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần Cấp 4`}`)
       .setColor(this.ultimateUnlocked ? '#ffd700' : '#00aaff');
 
-    soldierStatus.setText(`Triệu hồi (D): ${this.soldierUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần Cấp 7`}`)
+    soldierStatus.setText(`Triệu hồi (D): ${this.soldierUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần Cấp 5`}`)
       .setColor(this.soldierUnlocked ? '#00ff00' : '#88ff88');
   }
 
@@ -1572,7 +1636,7 @@ private spawnCoins(x: number, y: number, amount: number): void {
       this.updateManaBar();
 
       // ✨ 5. LOGIC THÔNG BÁO MỞ KHÓA KỸ NĂNG ✨
-      if (this.playerLevel >= 5 && !this.ultimateUnlocked) {
+      if (this.playerLevel >= 4 && !this.ultimateUnlocked) {
         this.ultimateUnlocked = true;
         // Dùng delayedCall để thông báo hiện sau thông báo lên cấp
         this.time.delayedCall(2000, () => {
@@ -1580,7 +1644,7 @@ private spawnCoins(x: number, y: number, amount: number): void {
         }, [], this);
       }
 
-      if (this.playerLevel >= 7 && !this.soldierUnlocked) {
+      if (this.playerLevel >= 5 && !this.soldierUnlocked) {
         this.soldierUnlocked = true;
         // Dùng delayedCall để thông báo hiện sau thông báo lên cấp
         this.time.delayedCall(2500, () => {
@@ -1657,8 +1721,8 @@ private spawnCoins(x: number, y: number, amount: number): void {
     const scoreText = this.add.text(-150, startY + lineHeight * 5, "Tổng điểm: 0", { fontSize: "18px", color: "#ffffff" }).setOrigin(0, 0.5);
 
     // Ghi chú mở khóa
-    const ultStatus = this.add.text(-150, startY + lineHeight * 7, "Hỏa tiễn (S): Cấp 5", { fontSize: "16px", color: "#00aaff" }).setOrigin(0, 0.5);
-    const soldierStatus = this.add.text(-150, startY + lineHeight * 8, "Triệu hồi (D): Cấp 7", { fontSize: "16px", color: "#00ff00" }).setOrigin(0, 0.5);
+    const ultStatus = this.add.text(-150, startY + lineHeight * 7, "Hỏa tiễn (S): Cấp 4", { fontSize: "16px", color: "#00aaff" }).setOrigin(0, 0.5);
+    const soldierStatus = this.add.text(-150, startY + lineHeight * 8, "Triệu hồi (D): Cấp 5", { fontSize: "16px", color: "#00ff00" }).setOrigin(0, 0.5);
 
     // Tạo Container
     const panel = this.add.container(camWidth / 2, camHeight / 2, [
@@ -1775,11 +1839,11 @@ private spawnCoins(x: number, y: number, amount: number): void {
 
     // LƯU TRỮ DỮ LIỆU CẦN THIẾT
     const saveData = {
-      playerLevel: this.playerLevel,
-      currentExp: this.currentExp,
-      requiredExp: this.requiredExp,
-      totalScore: this.totalScore, // Giả định totalScore là "xu" hoặc điểm
-      // Bạn có thể thêm các chỉ số khác (health, damage, v.v.) nếu cần
+        playerLevel: this.playerLevel,
+        totalScore: this.totalScore,    // ĐIỂM
+        playerCoins: this.playerCoins,  // ✨ PHẢI TRUYỀN XU ĐI ✨
+        currentExp: this.currentExp,
+        requiredExp: this.requiredExp,
     };
 
     // Dừng scene hiện tại và khởi động scene Lobby, truyền dữ liệu
@@ -1795,39 +1859,55 @@ private spawnCoins(x: number, y: number, amount: number): void {
   }
 
   // ✨ THÊM HÀM INIT VÀ XỬ LÝ DỮ LIỆU KHỞI TẠO ✨
-  init(data: any) {
-    // Nếu có dữ liệu được truyền từ Lobby/Menu chính, sử dụng nó
-    if (data && data.playerLevel) {
-      this.playerLevel = data.playerLevel;
-      this.currentExp = data.currentExp;
-      this.requiredExp = data.requiredExp;
-      this.totalScore = data.totalScore || 0;
+  // Trong GameScene.ts
 
-      // Tái tạo lại chỉ số dựa trên Level đã được lưu
-      // NOTE: Nếu không lưu baseHealth/Damage, bạn cần tính toán lại ở đây
-      // Ví dụ: tính lại baseMaxHealth = 5 + (this.playerLevel - 1) * 0.5
+// ✨ HÀM KHỞI TẠO VÀ NHẬN DỮ LIỆU TỪ LOBBY/SCENE TRƯỚC ✨
+// Trong GameScene.ts -> init(data: any)
+
+init(data: any) {
+    // 1. Luôn đặt giá trị mặc định cho trường hợp không có dữ liệu
+    this.playerLevel = 1;
+    this.totalScore = 0;
+    this.currentExp = 0;
+    this.requiredExp = 10;
+    
+    // ✨ KHAI BÁO VÀ RESET BIẾN playerCoins ✨
+    this.playerCoins = 0; // Đặt mặc định cho Xu (playerCoins)
+    
+    // 2. Nếu có dữ liệu được truyền từ Scene trước (LobbyScene), HÃY GHI ĐÈ
+    if (data) {
+        this.playerLevel = data.playerLevel || 1;
+        this.totalScore = data.totalScore || 0;
+        
+        // ✨ DÒNG KHẮC PHỤC CHÍNH: NHẬN VÀ CẬP NHẬT playerCoins ✨
+        this.playerCoins = data.playerCoins || 0; 
+        
+        this.currentExp = data.currentExp || 0;
+        this.requiredExp = data.requiredExp || 10;
     }
-  }
+    
+    // [Tùy chọn] Gọi updateCoinUI() ở đây nếu bạn muốn cập nhật hiển thị ngay lập tức
+}
 
   // Trong GameScene.ts, hàm private stopCoinMovement:
 
-private stopCoinMovement(coinObj: any, groundObj: any): void {
+  private stopCoinMovement(coinObj: any, groundObj: any): void {
     const coin = coinObj as Coin;
-    
+
     // Đảm bảo coin vẫn đang hoạt động và đang chạm đất
     if (coin.active && coin.body.blocked.down) {
-        // Dừng mọi vận tốc
-        coin.setVelocity(0, 0);
-        coin.setAngularVelocity(0);
-        
-        // Vô hiệu hóa ảnh hưởng của lực bên ngoài
-        coin.setImmovable(false); 
-        
-        // Ngăn chặn đồng xu bị đẩy bởi Player hoặc vật thể khác
-        // ✨ SỬA LỖI: DÙNG THUỘC TÍNH .pushable = false ✨
-        (coin.body as Phaser.Physics.Arcade.Body).pushable = false;
-        // -----------------------------------------------------
+      // Dừng mọi vận tốc
+      coin.setVelocity(0, 0);
+      coin.setAngularVelocity(0);
+
+      // Vô hiệu hóa ảnh hưởng của lực bên ngoài
+      coin.setImmovable(false);
+
+      // Ngăn chặn đồng xu bị đẩy bởi Player hoặc vật thể khác
+      // ✨ SỬA LỖI: DÙNG THUỘC TÍNH .pushable = false ✨
+      (coin.body as Phaser.Physics.Arcade.Body).pushable = false;
+      // -----------------------------------------------------
     }
-}
+  }
 
 }

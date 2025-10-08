@@ -11,8 +11,9 @@ export default class LobbyScene extends Scene {
 
     // ✨ THÊM BIẾN LƯU DỮ LIỆU GAMESTATE ✨
     private playerLevel: number = 1;
-    private totalScore: number = 0;
-    private expData: any = {}; // Lưu trữ EXP chi tiết (currentExp, requiredExp)
+    private totalScore: number = 0; // ĐIỂM
+    private playerCoins: number = 0; // ✨ XU (BIẾN MỚI) ✨
+    private expData: any = {};
 
     // ✨ KHAI BÁO: Thêm ground group
     private ground!: Phaser.Physics.Arcade.StaticGroup;
@@ -32,14 +33,14 @@ export default class LobbyScene extends Scene {
     private nguyenXiNameText!: Phaser.GameObjects.Text; // ✨ THÊM TÊN NGUYỄN XÍ
 
     // ✨ BIẾN MỚI: UI Hướng dẫn chơi
-private guideText!: Phaser.GameObjects.Text; 
-private guideBox!: Phaser.GameObjects.Rectangle;
+    private guideText!: Phaser.GameObjects.Text;
+    private guideBox!: Phaser.GameObjects.Rectangle;
 
-// ✨ BIẾN MỚI: Trạng thái hướng dẫn
-private isShowingGuide: boolean = false; 
+    // ✨ BIẾN MỚI: Trạng thái hướng dẫn
+    private isShowingGuide: boolean = false;
 
-// Khai báo phím mới
-private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space để tiếp tục
+    // Khai báo phím mới
+    private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space để tiếp tục
 
     // Trạng thái game
     private isInDialogue: boolean = false;
@@ -53,7 +54,7 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
     preload(): void {
 
         // ✨ ĐẢM BẢO NHẠC NỀN ĐƯỢC TẢI (ĐÃ SỬA ĐƯỜNG DẪN) ✨
-        this.load.audio('bgMusic', '../assets/ms_1.mp3'); 
+        this.load.audio('bgMusic', '../assets/ms_1.mp3');
 
         // --- Frames Lê Lợi --- (Giữ nguyên)
         this.load.image('leloi1', '../assets/lt1.png');
@@ -93,29 +94,39 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
     create(): void {
         const camWidth = this.cameras.main.width;
         const camHeight = this.cameras.main.height;
-        // ✨ THÊM UI HIỂN THỊ CHỈ SỐ ĐÃ LƯU ✨
+        // ✨ SỬA VỊ TRÍ: Đặt cố định ở góc trên bên trái (16px margin) ✨
+        const marginX = 16;
+        const marginY = 60;
         this.add.text(
-            camWidth / 2,
-            30, // Đặt ở vị trí cao
-            `Level: ${this.playerLevel} | Xu: ${this.totalScore}`,
-            { fontSize: '24px', color: '#ffcc00', backgroundColor: '#000000', padding: { x: 10, y: 5 } }
-        ).setOrigin(0.5, 0);
+            marginX,
+            marginY,
+            `Level: ${this.playerLevel} | Xu: ${this.playerCoins}`, 
+            {
+                fontSize: '24px',
+                color: '#ffcc00',
+                backgroundColor: '#000000',
+                padding: { x: 10, y: 5 }
+            }
+        )
+            .setOrigin(0, 0) // Neo vào góc trên bên trái
+            .setScrollFactor(0) // Cố định với camera
+            .setDepth(10); // Đảm bảo nó luôn hiển thị trên nền
         // ------------------------------------
 
-         // ✨ LOGIC PHÁT NHẠC (Đã sửa lỗi tạo đối tượng lặp lại) ✨
-    // 1. Dùng get() để lấy instance âm thanh nếu nó đã được tạo
-    this.bgMusic = this.sound.get('bgMusic'); 
+        // ✨ LOGIC PHÁT NHẠC (Đã sửa lỗi tạo đối tượng lặp lại) ✨
+        // 1. Dùng get() để lấy instance âm thanh nếu nó đã được tạo
+        this.bgMusic = this.sound.get('bgMusic');
 
-    if (!this.bgMusic) {
-        // 2. Nếu chưa có, tạo nó (và nó sẽ được lưu trong Sound Manager)
-        this.bgMusic = this.sound.add('bgMusic', { volume: 0.4, loop: true });
-    }
-    
-    // 3. Chỉ phát nếu nó chưa chạy
-    if (!this.bgMusic.isPlaying) {
-        this.bgMusic.play();
-    }
-    // ------------------------------------
+        if (!this.bgMusic) {
+            // 2. Nếu chưa có, tạo nó (và nó sẽ được lưu trong Sound Manager)
+            this.bgMusic = this.sound.add('bgMusic', { volume: 0.4, loop: true });
+        }
+
+        // 3. Chỉ phát nếu nó chưa chạy
+        if (!this.bgMusic.isPlaying) {
+            this.bgMusic.play();
+        }
+        // ------------------------------------
 
         // 1. Thêm nền
         this.add.tileSprite(0, 0, camWidth, camHeight, 'background')
@@ -124,7 +135,7 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
         // 2. TẠO GROUND 
         this.ground = this.physics.add.staticGroup();
         const GROUND_Y_POS = 950;
-        this.ground.create(camWidth / 2, GROUND_Y_POS, "ground").setScale(10, 10).refreshBody();
+        this.ground.create(camWidth / 2, GROUND_Y_POS, "ground").setScale(100, 10).refreshBody();
 
         // VỊ TRÍ Y ĐỨNG
         const playerStartY = 650;
@@ -280,7 +291,7 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
             .setStrokeStyle(4, 0xffd700) // Viền màu vàng
             .setDepth(20)
             .setVisible(false);
-            
+
         this.guideText = this.add
             .text(camWidth / 2, camHeight / 2 - (camHeight * 0.5) / 2 + 20, "", {
                 // Tăng kích thước chữ, sử dụng font monospace để căn chỉnh
@@ -303,12 +314,12 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
         this.physics.add.collider(this.player, this.npcShop);
     }
 
-     // ✨ HÀM HIỂN THỊ HƯỚNG DẪN CHƠI ✨
+    // ✨ HÀM HIỂN THỊ HƯỚNG DẪN CHƠI ✨
     private showGameGuide(): void {
         this.isShowingGuide = true;
         this.player.body.setVelocity(0, 0);
         this.player.anims.stop();
-        
+
         // Dừng nhạc nền tạm thời (nếu đang chạy)
         if (this.bgMusic.isPlaying) {
             this.bgMusic.pause();
@@ -317,7 +328,7 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
         this.guideBox.setVisible(true);
         this.guideText.setVisible(true);
 
-        const guideContent = 
+        const guideContent =
             "***HƯỚNG DẪN CƠ BẢN***\n\n" +
             "⬅️ ➡️: Di chuyển (Trái/Phải)\n" +
             "[SPACE]: Nhảy\n" +
@@ -334,18 +345,18 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
         // Đợi phím Enter được nhấn để đóng hướng dẫn
         this.input.keyboard!.once('keydown-ENTER', this.hideGameGuide, this);
     }
-    
+
     // ✨ HÀM ẨN HƯỚNG DẪN CHƠI ✨
     private hideGameGuide(): void {
         this.isShowingGuide = false;
         this.guideBox.setVisible(false);
         this.guideText.setVisible(false);
-        
+
         // Chạy lại nhạc nền (nếu bị dừng)
         if (!this.bgMusic.isPlaying) {
             this.bgMusic.resume();
         }
-        
+
         // Cho phép Player di chuyển trở lại
     }
 
@@ -364,7 +375,7 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
             return;
         }
 
-        
+
 
         this.handlePlayerMovement();
         this.handleNPCInteraction();
@@ -482,15 +493,19 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
 
         this.endDialogue();
 
-        // ✨ TRUYỀN LẠI DỮ LIỆU GAMESTATE VÀO GAME SCENE ✨
         const gameDataToPass = {
             playerLevel: this.playerLevel,
-            totalScore: this.totalScore,
+
+            // ✅ TRUYỀN GIÁ TRỊ RIÊNG BIỆT ĐÃ LƯU TRONG LOBBY
+            totalScore: this.totalScore,    // ĐIỂM
+            playerCoins: this.playerCoins,  // XU
+
             currentExp: this.expData.currentExp,
             requiredExp: this.expData.requiredExp,
-            // Thêm các dữ liệu khác nếu bạn cần
         };
-        this.scene.start("Game"); // Chuyển sang GameScene
+
+        // Truyền data qua hàm start()
+        this.scene.start("Game", gameDataToPass);
     }
 
     // Xử lý khi người chơi nhấn NO (Giữ nguyên)
@@ -513,16 +528,34 @@ private continueKey!: Phaser.Input.Keyboard.Key; // Phím Enter hoặc Space đ�
         this.nguyenXiNameText.setVisible(true);
     }
     // ✨ INIT LÀ HÀM NHẬN DỮ LIỆU TRUYỀN TỪ SCENE TRƯỚC ✨
+
+
     init(data: any) {
-        // Kiểm tra xem dữ liệu có được truyền không
+        // 1. Khởi tạo giá trị mặc định
+        this.playerLevel = 1;
+        this.totalScore = 0;
+        this.playerCoins = 0; // Khởi tạo Xu
+        this.expData = {
+            currentExp: 0,
+            requiredExp: 10
+        };
+
+        // 2. Kiểm tra và áp dụng dữ liệu đã lưu
         if (data && data.playerLevel !== undefined) {
+
             this.playerLevel = data.playerLevel;
-            this.totalScore = data.totalScore || 0;
+
+            // ✨ DÒNG SỬA LỖI: NHẬN VÀ PHÂN TÁCH ĐIỂM và XU ✨
+            this.totalScore = data.totalScore || 0; // Nhận Điểm
+            this.playerCoins = data.playerCoins || 0; // Nhận Xu
+
+            // Cập nhật EXP
             this.expData = {
                 currentExp: data.currentExp || 0,
                 requiredExp: data.requiredExp || 10
             };
-            console.log("Dữ liệu Level/Xu đã được giữ lại trong Lobby:", data);
+
+            console.log("Dữ liệu Xu đã được giữ lại trong Lobby:", this.playerCoins);
         }
     }
 }
