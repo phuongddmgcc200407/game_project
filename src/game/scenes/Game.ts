@@ -32,6 +32,21 @@ interface Coin extends Phaser.Types.Physics.Arcade.SpriteWithDynamicBody {
 
 
 export default class GameScene extends Scene {
+
+  // Trạng thái sở hữu Pet (Phải được truyền qua Scene)
+  private petOwned: { [key: string]: boolean } = {
+    hp_regen: false,
+    damage_dps: false,
+    coin_collect: false
+  };
+  private currentPetSprite: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | null = null;
+  private petRegenTimer: number = 0; // Timer cho Pet hồi máu
+
+  // ✨ KHAI BÁO BIẾN MỚI CHO PET DAMAGE ✨
+  private petDamageTimer: number = 0; // Timer cho Pet tấn công
+  private readonly PET_DAMAGE_RATE: number = 180; // Tấn công mỗi 180 frames (3 giây)
+  private readonly PET_BASE_DAMAGE: number = 1; // Sát thương cơ bản
+
   private currentLevel: number = 1; // Vòng chơi hiện tại
   private levelCompleteText!: Phaser.GameObjects.Text;
   private isLevelComplete: boolean = false; // Đang hiển thị thông báo chiến thắng vòng
@@ -179,6 +194,31 @@ export default class GameScene extends Scene {
   }
 
   preload(): void {
+
+    // Ảnh Pet Heal Frames (Thêm các frame mới)
+    this.load.image('pet_heal1', '../assets/ph1.png');
+    this.load.image('pet_heal2', '../assets/ph2.png');
+    this.load.image('pet_heal3', '../assets/ph3.png');
+    this.load.image('pet_heal4', '../assets/ph4.png');
+    this.load.image('pet_heal5', '../assets/ph5.png');
+    this.load.image('pet_heal6', '../assets/ph6.png');
+    this.load.image('pet_heal7', '../assets/ph7.png');
+    this.load.image('pet_heal8', '../assets/ph8.png');
+    // Ảnh Pet damage
+    this.load.image('pet_damage1', '../assets/sl1.png');
+    this.load.image('pet_damage2', '../assets/sl2.png');
+    this.load.image('pet_damage3', '../assets/sl3.png');
+    this.load.image('pet_damage4', '../assets/sl4.png');
+    this.load.image('pet_damage5', '../assets/sl5.png');
+    this.load.image('pet_damage6', '../assets/sl6.png');
+    this.load.image('pet_damage7', '../assets/sl7.png');
+    this.load.image('pet_damage8', '../assets/sl8.png');
+    this.load.image('pet_damage9', '../assets/sl9.png');
+
+
+    this.load.image('pet_coin', '../assets/pet_heal.png')
+
+
     this.load.image("ground", "assets/ground_2.png");
     this.load.image("background", "assets/background.png");
     this.load.image("arrow", "assets/arrow_fire.png");
@@ -198,8 +238,6 @@ export default class GameScene extends Scene {
     this.load.image('leloi5', '../assets/lt5.png');
     this.load.image('leloi6', '../assets/lt6.png');
     this.load.image('leloi7', '../assets/lt7.png');
-
-
 
     // --- Frames soldier ---
     this.load.image('ls1', '../assets/ls1.png');
@@ -276,6 +314,30 @@ export default class GameScene extends Scene {
     this.player.setCollideWorldBounds(true);
     this.player.setOrigin(0.5, 1);
     this.physics.add.collider(this.player, this.ground);
+
+    // ✨ VỊ TRÍ CHÍNH XÁC: GỌI HÀM HIỂN THỊ PET NGAY TẠI ĐÂY ✨
+    this.displayPet()
+
+    // ✨ ĐỊNH NGHĨA HOẠT ẢNH PET HEAL ✨
+    this.anims.create({
+      key: "pet-heal-idle",
+      frames: [
+        { key: "pet_heal1" }, { key: "pet_heal2" }, { key: "pet_heal3" }, { key: "pet_heal4" },
+        { key: "pet_heal5" }, { key: "pet_heal6" }, { key: "pet_heal7" }, { key: "pet_heal8" },
+      ],
+      frameRate: 6,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: "pet-damage-idle", // <--- KEY HOẠT ẢNH MỚI
+      frames: [
+        { key: "pet_damage1" }, { key: "pet_damage2" }, { key: "pet_damage3" }, { key: "pet_damage4" },
+        { key: "pet_damage5" }, { key: "pet_damage6" }, { key: "pet_damage7" }, { key: "pet_damage8" }, { key: "pet_damage9" },
+      ],
+      frameRate: 6, // Tốc độ hợp lý
+      repeat: -1, // Lặp lại vô hạn
+    });
 
     // ✨ ĐỊNH NGHĨA HOẠT ẢNH BOSS ✨
     this.anims.create({
@@ -690,7 +752,7 @@ export default class GameScene extends Scene {
     this.isInDialogue = false;
     this.dialogueBox.setVisible(false);
     this.dialogueText.setVisible(false);
-    this.input.keyboard!.off("keydown-SPACE", this.nextDialogueLine, this); 
+    this.input.keyboard!.off("keydown-SPACE", this.nextDialogueLine, this);
   }
 
   // --- Combat/Interaction Logic ---
@@ -841,8 +903,11 @@ export default class GameScene extends Scene {
   private applyDamage(projectile: any, target: any, damage: number, knockback: number): void {
     const enemy = target as GameCharacter;
 
-    if (!projectile || !projectile.body || !enemy || !enemy.body) return;
-    if (!projectile.active || !enemy.active) return;
+    // ✨ SỬA LỖI: Chỉ kiểm tra enemy.body, không kiểm tra projectile.body nếu projectile là null
+    if (!enemy || !enemy.body || !enemy.active) return;
+    
+    // Nếu có projectile (mũi tên/tên lửa), hãy đảm bảo nó hoạt động
+    if (projectile && !projectile.active) return;
 
     enemy.health -= damage; // Áp dụng sát thương
 
@@ -1204,6 +1269,7 @@ export default class GameScene extends Scene {
   // --- Game Loop ---
   // -------------------------------------------------------------------------
   update(): void {
+    // --- 1. KIỂM TRA TRẠNG THÁI CHẶN (BLOCKING STATES) ---
     if (this.isGameOver) {
       if (Phaser.Input.Keyboard.JustDown(this.cursors.space!)) window.location.reload();
       return;
@@ -1249,6 +1315,61 @@ export default class GameScene extends Scene {
     if (this.ultimateCooldown > 0) {
       this.ultimateCooldown--;
     }
+
+    // ✨ HIỆU ỨNG PET HỒI MÁU (PET 1) ✨
+    if (this.petOwned.hp_regen) {
+      this.petRegenTimer++;
+      if (this.petRegenTimer >= 300) {
+        this.playerHealth = Phaser.Math.Clamp(this.playerHealth + 1, 0, this.MAX_PLAYER_HEALTH);
+        this.updatePlayerHealthBar();
+        this.petRegenTimer = 0;
+      }
+    }
+
+    // ✨ LOGIC TẤN CÔNG PET DAMAGE ✨
+    // ✨ LOGIC TẤN CÔNG PET DAMAGE ✨
+if (this.petOwned.damage_dps) {
+    this.petDamageTimer++;
+    
+    // ĐỊNH NGHĨA TẦM TẤN CÔNG (Ví dụ: 300 pixel)
+    const ATTACK_RANGE = 380; 
+
+    if (this.petDamageTimer >= this.PET_DAMAGE_RATE) {
+        // ✨ THAY THẾ findNearestEnemy BẰNG findNearestEnemyInRadius ✨
+        const target = this.findNearestEnemyInRadius(
+            this.player.x, 
+            this.player.y, 
+            ATTACK_RANGE
+        ); 
+        
+        if (target) {
+            // Tấn công ngay lập tức (instant damage)
+            this.applyDamage(null, target, this.PET_BASE_DAMAGE, 0); 
+            
+            // Hiệu ứng thị giác
+            this.currentPetSprite?.setTint(0xff8800); 
+            this.time.delayedCall(150, () => this.currentPetSprite?.clearTint());
+        }
+        this.petDamageTimer = 0;
+    }
+}
+
+    // Logic theo dõi Pet (VỊ TRÍ ĐẶT ĐÚNG)
+    if (this.currentPetSprite) {
+      const followDistance = 60;
+      const easingFactor = 0.9;
+      const targetX = this.player.x + (this.player.flipX ? 50 : -50);
+      const dx = targetX - this.currentPetSprite.x;
+
+      if (Math.abs(dx) > followDistance) {
+        this.currentPetSprite.body.velocity.x = dx * easingFactor;
+      } else {
+        this.currentPetSprite.body.velocity.x = 0;
+      }
+      this.currentPetSprite.setFlipX(!this.player.flipX);
+    }
+    // ------------------------------------
+
 
     // ✨ LỖI ĐÃ SỬA: BỎ DÒNG 'return' (Hoặc di chuyển nó ra khỏi đây nếu cần)
     if (this.isLevelComplete) {
@@ -1309,7 +1430,7 @@ export default class GameScene extends Scene {
     const canUseUltimate = this.playerMana >= this.ULTIMATE_COST;
     // ✨ THÊM ĐIỀU KIỆN CẤP ĐỘ 5 ✨
     const canUnlockUltimate = this.playerLevel >= 4;
-    //     const isUltimateCharging = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging && canUseUltimate; 
+    //     const isUltimateCharging = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging && canUseUltimate; 
 
     // PHẢI KIỂM TRA CẤP ĐỘ (canUnlockUltimate) NGAY Ở ĐÂY
     const isTryingToCharge = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging;
@@ -1348,9 +1469,9 @@ export default class GameScene extends Scene {
 
     // SỬA LỖI: Bổ sung điều kiện KHÔNG XÓA TINT khi đang trong trạng thái vô địch
     // Chỉ xóa tint nếu không có sạc nào đang diễn ra VÀ nhân vật không đang trong trạng thái Invincible
-    //     if (!isAttacking && !isUltimateCharging && !this.ultimateKey.isDown && !this.isInvincible) {
-    //         this.player.clearTint();
-    //     }
+    //     if (!isAttacking && !isUltimateCharging && !this.ultimateKey.isDown && !this.isInvincible) {
+    //         this.player.clearTint();
+    //     }
 
     // Kích hoạt chiêu Triệu hồi lính (Nút D)
     const canSummonSoldier = this.playerLevel >= 5; // ✨ ĐIỀU KIỆN CẤP ĐỘ 5 ✨
@@ -1839,11 +1960,11 @@ export default class GameScene extends Scene {
 
     // LƯU TRỮ DỮ LIỆU CẦN THIẾT
     const saveData = {
-        playerLevel: this.playerLevel,
-        totalScore: this.totalScore,    // ĐIỂM
-        playerCoins: this.playerCoins,  // ✨ PHẢI TRUYỀN XU ĐI ✨
-        currentExp: this.currentExp,
-        requiredExp: this.requiredExp,
+      playerLevel: this.playerLevel,
+      totalScore: this.totalScore,    // ĐIỂM
+      playerCoins: this.playerCoins,  // ✨ PHẢI TRUYỀN XU ĐI ✨
+      currentExp: this.currentExp,
+      requiredExp: this.requiredExp,
     };
 
     // Dừng scene hiện tại và khởi động scene Lobby, truyền dữ liệu
@@ -1861,33 +1982,38 @@ export default class GameScene extends Scene {
   // ✨ THÊM HÀM INIT VÀ XỬ LÝ DỮ LIỆU KHỞI TẠO ✨
   // Trong GameScene.ts
 
-// ✨ HÀM KHỞI TẠO VÀ NHẬN DỮ LIỆU TỪ LOBBY/SCENE TRƯỚC ✨
-// Trong GameScene.ts -> init(data: any)
+  // ✨ HÀM KHỞI TẠO VÀ NHẬN DỮ LIỆU TỪ LOBBY/SCENE TRƯỚC ✨
+  // Trong GameScene.ts -> init(data: any)
 
-init(data: any) {
+  init(data: any) {
     // 1. Luôn đặt giá trị mặc định cho trường hợp không có dữ liệu
     this.playerLevel = 1;
     this.totalScore = 0;
     this.currentExp = 0;
     this.requiredExp = 10;
-    
+
     // ✨ KHAI BÁO VÀ RESET BIẾN playerCoins ✨
     this.playerCoins = 0; // Đặt mặc định cho Xu (playerCoins)
-    
+
     // 2. Nếu có dữ liệu được truyền từ Scene trước (LobbyScene), HÃY GHI ĐÈ
     if (data) {
-        this.playerLevel = data.playerLevel || 1;
-        this.totalScore = data.totalScore || 0;
-        
-        // ✨ DÒNG KHẮC PHỤC CHÍNH: NHẬN VÀ CẬP NHẬT playerCoins ✨
-        this.playerCoins = data.playerCoins || 0; 
-        
-        this.currentExp = data.currentExp || 0;
-        this.requiredExp = data.requiredExp || 10;
+      // ✨ NHẬN TRẠNG THÁI SỞ HỮU PET ✨
+      if (data && data.petOwned) {
+        this.petOwned = data.petOwned;
+      }
+
+      this.playerLevel = data.playerLevel || 1;
+      this.totalScore = data.totalScore || 0;
+
+      // ✨ DÒNG KHẮC PHỤC CHÍNH: NHẬN VÀ CẬP NHẬT playerCoins ✨
+      this.playerCoins = data.playerCoins || 0;
+
+      this.currentExp = data.currentExp || 0;
+      this.requiredExp = data.requiredExp || 10;
     }
-    
+
     // [Tùy chọn] Gọi updateCoinUI() ở đây nếu bạn muốn cập nhật hiển thị ngay lập tức
-}
+  }
 
   // Trong GameScene.ts, hàm private stopCoinMovement:
 
@@ -1909,5 +2035,75 @@ init(data: any) {
       // -----------------------------------------------------
     }
   }
+
+  private displayPet(): void {
+    // 1. Nếu Pet đang hiển thị, hủy nó đi
+    if (this.currentPetSprite) {
+      this.currentPetSprite.destroy();
+      this.currentPetSprite = null;
+    }
+
+    let petKey: string | null = null;
+
+    let animationKey: string | null = null;
+
+    // ✨ SỬ DỤNG TÊN KEY ĐÃ TẢI TRONG PRELOAD() ✨
+    if (this.petOwned.hp_regen) {
+      petKey = 'pet_heal1';
+      animationKey = 'pet-heal-idle';
+    }
+    else if (this.petOwned.damage_dps) {
+      petKey = 'pet_damage1';
+      animationKey = 'pet-damage-idle';
+    }
+    else if (this.petOwned.coin_collect) petKey = 'pet_coin';
+    // -----------------------------------------------------
+
+    if (petKey) {
+      // Đảm bảo this.player và this.ground đã được khởi tạo
+      if (!this.player || !this.ground) {
+        console.error("Lỗi: Player hoặc Ground chưa được khởi tạo!");
+        return;
+      }
+
+      // 2. Tạo Pet Sprite mới
+      this.currentPetSprite = this.physics.add.sprite(this.player.x - 50, this.player.y - 50, petKey) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+
+      this.currentPetSprite.setOrigin(0.5, 1);
+      this.currentPetSprite.body.allowGravity = true;
+      this.physics.add.collider(this.currentPetSprite, this.ground); // Pet cũng đứng trên đất
+      this.currentPetSprite.setScale(0.8); // Giảm kích thước Pet
+
+      // 3. CHẠY HOẠT ẢNH NẾU CÓ
+      if (animationKey) {
+        // Lỗi cũ đã được xử lý bằng dấu (!)
+        this.currentPetSprite.play(animationKey!, true);
+      }
+    }
+  }
+
+  // Trong GameScene.ts (Thêm hàm này)
+
+private findNearestEnemyInRadius(x: number, y: number, radius: number): GameCharacter | null {
+    let nearestEnemy: GameCharacter | null = null;
+    let minDistance = Infinity;
+
+    this.enemies.getChildren().forEach((enemy: any) => {
+        const char = enemy as GameCharacter;
+        if (char.active) {
+            const distance = Phaser.Math.Distance.Between(x, y, char.x, char.y);
+            
+            // CHỈ XÉT KẺ ĐỊCH NẰM TRONG PHẠM VI
+            if (distance < radius) { 
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestEnemy = char;
+                }
+            }
+        }
+    });
+
+    return nearestEnemy;
+}
 
 }
