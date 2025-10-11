@@ -59,6 +59,31 @@ export default class Preloader extends Scene {
     this.load.image('boss6', '../assets/boss6.png');
     this.load.image('boss7', '../assets/boss7.png');
 
+    // Ảnh Pet healer
+    this.load.image('pet_heal1', '../assets/ph1.png');
+    this.load.image('pet_heal2', '../assets/ph2.png');
+    this.load.image('pet_heal3', '../assets/ph3.png');
+    this.load.image('pet_heal4', '../assets/ph4.png');
+    this.load.image('pet_heal5', '../assets/ph5.png');
+    this.load.image('pet_heal6', '../assets/ph6.png');
+    this.load.image('pet_heal7', '../assets/ph7.png');
+    this.load.image('pet_heal8', '../assets/ph8.png');
+
+    // Ảnh Pet damage
+    this.load.image('pet_damage1', '../assets/sl1.png');
+    this.load.image('pet_damage2', '../assets/sl2.png');
+    this.load.image('pet_damage3', '../assets/sl3.png');
+    this.load.image('pet_damage4', '../assets/sl4.png');
+    this.load.image('pet_damage5', '../assets/sl5.png');
+    this.load.image('pet_damage6', '../assets/sl6.png');
+    this.load.image('pet_damage7', '../assets/sl7.png');
+    this.load.image('pet_damage8', '../assets/sl8.png');
+    this.load.image('pet_damage9', '../assets/sl9.png');
+
+    // Ảnh Pet nhặt coins
+    this.load.image('pet_coin', '../assets/pet_heal.png');
+
+
 
     // --- Hiệu ứng kéo cung ---
     this.load.image('bancung1', '../assets/bancung_1.png');
