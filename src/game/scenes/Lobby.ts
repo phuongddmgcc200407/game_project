@@ -6,6 +6,74 @@ export default class LobbyScene extends Scene {
     private player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 
+    // ✨ KHAI BÁO BIẾN MỚI: NPC HỎI ĐÁP VÀ TRẠNG THÁI QUIZ ✨
+    private npcQuiz!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+    private quizNameText!: Phaser.GameObjects.Text;
+    private isQuizActive: boolean = false;
+    private currentQuestionIndex: number = 0;
+    private readonly COIN_REWARD_PER_QUESTION: number = 20;
+    private uiTextLevelCoin!: Phaser.GameObjects.Text;
+
+    // ✨ BIẾN MỚI: Theo dõi việc hoàn thành Quiz ✨
+    private hasCompletedQuiz: boolean = false;
+
+    // Các phím đáp án
+    // private keyA!: Phaser.Input.Keyboard.Key;
+    // private keyB!: Phaser.Input.Keyboard.Key;
+
+    private readonly quizQuestions = [
+        {
+            question: "1/10: Ai là người lãnh đạo cuộc khởi nghĩa Lam Sơn?",
+            options: "A. Nguyễn Trãi / B. Lê Lợi",
+            correctAnswer: 'B'
+        },
+        {
+            question: "2/10: Khởi nghĩa Lam Sơn diễn ra vào thế kỷ nào?",
+            options: "A. Thế kỷ XIV / B. Thế kỷ XV",
+            correctAnswer: 'B'
+        },
+        {
+            question: "3/10: Địa danh nào được Lê Lợi dùng làm căn cứ đầu tiên?",
+            options: "A. Chi Lăng / B. Lam Sơn",
+            correctAnswer: 'B'
+        },
+        {
+            question: "4/10: Nguyễn Trãi dâng Bình Ngô Sách vào thời điểm nào?",
+            options: "A. Khi mới bắt đầu khởi nghĩa / B. Sau khi khởi nghĩa thành công",
+            correctAnswer: 'A'
+        },
+        {
+            question: "5/10: Ai là người hiến kế 'đổi họ' cho Lê Lợi để bảo toàn lực lượng?",
+            options: "A. Lê Lai / B. Lê Thạch",
+            correctAnswer: 'A'
+        },
+        {
+            question: "6/10: Tướng giặc nào bị chém đầu trong trận Chi Lăng – Xương Giang?",
+            options: "A. Vương Thông / B. Liễu Thăng",
+            correctAnswer: 'B'
+        },
+        {
+            question: "7/10: Sự kiện nào đánh dấu thắng lợi hoàn toàn của Khởi nghĩa Lam Sơn?",
+            options: "A. Hội thề Đông Quan / B. Trận Tốt Động – Chúc Động",
+            correctAnswer: 'A'
+        },
+        {
+            question: "8/10: Lê Lợi lên ngôi Hoàng đế, lập ra triều đại nào?",
+            options: "A. Nhà Tiền Lê / B. Nhà Hậu Lê",
+            correctAnswer: 'B'
+        },
+        {
+            question: "9/10: Tên gọi sau khi Lê Lợi lên ngôi là gì?",
+            options: "A. Lê Thái Tổ / B. Lê Thánh Tông",
+            correctAnswer: 'A'
+        },
+        {
+            question: "10/10: Bộ luật lớn nhất được ban hành dưới thời Hậu Lê sơ kỳ là gì?",
+            options: "A. Hình thư / B. Quốc triều Hình luật (Luật Hồng Đức)",
+            correctAnswer: 'B'
+        }
+    ];
+
     // ✨ THÊM BIẾN LƯU TRỮ NHẠC NỀN ✨
     private bgMusic!: Phaser.Sound.BaseSound;
 
@@ -116,6 +184,14 @@ export default class LobbyScene extends Scene {
         this.load.image('leloi6', '../assets/lt6.png');
         this.load.image('leloi7', '../assets/lt7.png');
 
+        // --- Sử gia ---
+        this.load.image('sg1', '../assets/sg1.png');
+        this.load.image('sg2', '../assets/sg2.png');
+        this.load.image('sg3', '../assets/sg3.png');
+        this.load.image('sg4', '../assets/sg4.png');
+        this.load.image('sg5', '../assets/sg5.png');
+
+
         // --- Hiệu ứng kéo cung (Giữ nguyên) ---
         this.load.image('bancung1', '../assets/bancung_1.png');
         this.load.image('bancung2', '../assets/bancung_2.png');
@@ -143,6 +219,17 @@ export default class LobbyScene extends Scene {
 
         // 3. THÊM HOẠT ẢNH
         // THÊM: Định nghĩa hoạt ảnh Pet Idle (Sau khi tải frame)
+        // ✨ HOẠT ẢNH SỬ GIA ✨
+        this.anims.create({
+            key: "sugia-idle", // Đặt tên key cho hoạt ảnh
+            frames: [
+                { key: "sg1" }, { key: "sg2" }, { key: "sg3" },
+                { key: "sg4" }, { key: "sg5" },
+            ],
+            frameRate: 1, // Tốc độ hoạt ảnh (Ví dụ: 3 frame/giây để đứng yên trông tự nhiên)
+            repeat: -1, // Lặp lại vô hạn
+        });
+        // -----------------------------------------------------
         this.anims.create({
             key: "pet-heal-idle", // <--- KEY HOẠT ẢNH MỚI
             frames: [
@@ -210,7 +297,7 @@ export default class LobbyScene extends Scene {
         // ✨ SỬA VỊ TRÍ: Đặt cố định ở góc trên bên trái (16px margin) ✨
         const marginX = 16;
         const marginY = 60;
-        this.add.text(
+        this.uiTextLevelCoin = this.add.text( // ✨ LƯU ĐỐI TƯỢNG TEXT VÀO BIẾN UI ✨
             marginX,
             marginY,
             `Level: ${this.playerLevel} | Xu: ${this.playerCoins}`,
@@ -304,6 +391,23 @@ export default class LobbyScene extends Scene {
             { fontSize: '18px', color: '#ffdd00', backgroundColor: '#000000', padding: { x: 5, y: 2 } }
         ).setOrigin(0.5);
 
+        // NPC QUIZ (Mới)
+        this.npcQuiz = this.physics.add.sprite(
+            camWidth / 2 - 300, // Vị trí mới (Ví dụ: bên trái Nguyễn Xí)
+            npcStartY,
+            "sg1" // Sử dụng lại asset đã có
+        ).setOrigin(0.5, 1).setImmovable(true);
+        this.npcQuiz.body.allowGravity = false;
+        this.npcQuiz.play("sugia-idle", true);
+
+        // Thêm tên "Quiz Master"
+        this.quizNameText = this.add.text(
+            this.npcQuiz.x,
+            this.npcQuiz.y - this.npcQuiz.height - 10,
+            "Sử gia", // Tên NPC mới
+            { fontSize: '18px', color: '#ffcc00', backgroundColor: '#000000', padding: { x: 5, y: 2 } }
+        ).setOrigin(0.5);
+
         // 6. Thêm Collider
         this.physics.add.collider(this.player, this.ground);
 
@@ -316,9 +420,9 @@ export default class LobbyScene extends Scene {
         this.input.keyboard!.on("keydown-N", this.handleNo, this);
 
         // 8. Thiết lập UI (Dialogue) (Giữ nguyên)
-        const dialogueY = camHeight - 100;
-        const dialogueTextY = camHeight - 150;
-        const promptTextY = camHeight - 40;
+        const dialogueY = camHeight - 160;
+        const dialogueTextY = camHeight - 190;
+        const promptTextY = camHeight - 80;
 
         this.dialogueBox = this.add
             .rectangle(camWidth / 2, dialogueY, 700, 120, 0x000000, 0.7)
@@ -387,6 +491,8 @@ export default class LobbyScene extends Scene {
 
         // ✨ HIỂN THỊ PET NGAY KHI SCENE LOAD ✨
         this.displayPet();
+
+        this.updateCoinDisplay();
     }
 
     // ✨ HÀM HIỂN THỊ HƯỚNG DẪN CHƠI ✨
@@ -448,6 +554,10 @@ export default class LobbyScene extends Scene {
         this.nguyenXiNameText.x = this.npcShop.x;
         this.nguyenXiNameText.y = this.npcShop.y - this.npcShop.height - 10;
 
+        // ✨ CẬP NHẬT VỊ TRÍ TÊN QUIZ NPC ✨
+        this.quizNameText.x = this.npcQuiz.x;
+        this.quizNameText.y = this.npcQuiz.y - this.npcQuiz.height - 10;
+
         // ✨ GỌI HÀM NÀY ĐẦU TIÊN ĐỂ CẬP NHẬT nearestNPC ✨
         this.handleNPCInteraction();
 
@@ -464,13 +574,16 @@ export default class LobbyScene extends Scene {
             } else if (nearestNPC === this.npcShop && !this.isShopOpen) {
                 // Mở Shop Nguyễn Xí
                 this.toggleShop(true);
+            } else if (nearestNPC === this.npcQuiz && !this.isQuizActive) { // ✨ XỬ LÝ NPC QUIZ ✨
+                this.startQuiz();
             }
+
         }
 
         // ====================================================================
         // ✨ BƯỚC 2: LOGIC CHẶN INPUT & MOVEMENT (THEO TRẠNG THÁI) ✨
         // ====================================================================
-        if (this.isInDialogue || this.isShowingGuide || this.isShopOpen) {
+        if (this.isInDialogue || this.isShowingGuide || this.isShopOpen || this.isQuizActive) {
             // Dừng Player và Pet
             this.player.body.setVelocityX(0);
             this.player.anims.stop();
@@ -545,6 +658,9 @@ export default class LobbyScene extends Scene {
     private handleNPCInteraction(): void {
         const distanceToQuestNPC = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npcQuest.x, this.npcQuest.y);
         const distanceToShopNPC = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npcShop.x, this.npcShop.y);
+        // ✨ THÊM KHOẢNG CÁCH TỚI NPC QUIZ ✨
+        const distanceToQuizNPC = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npcQuiz.x, this.npcQuiz.y);
+
         const interactionDistance = 150;
 
         let targetNPC: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody | null = null;
@@ -555,6 +671,9 @@ export default class LobbyScene extends Scene {
             isNearNPC = true;
         } else if (distanceToShopNPC < interactionDistance) {
             targetNPC = this.npcShop;
+            isNearNPC = true;
+        } else if (distanceToQuizNPC < interactionDistance) { // ✨ KIỂM TRA NPC QUIZ ✨
+            targetNPC = this.npcQuiz;
             isNearNPC = true;
         }
 
@@ -640,6 +759,7 @@ export default class LobbyScene extends Scene {
         // Hiển thị lại tên NPC sau khi kết thúc đối thoại
         this.dinhLeNameText.setVisible(true);
         this.nguyenXiNameText.setVisible(true);
+        this.quizNameText.setVisible(true);
         // ✨ TẮT LISTENER ĐINH LỄ KHI DIALOGUE KẾT THÚC ✨
         // this.disableDialogueKeys();
         this.player.setTexture('leloi1');
@@ -903,15 +1023,16 @@ export default class LobbyScene extends Scene {
         let animationKey: string | null = null;
         // ----------------------------------------------------
 
-        if (this.petOwned.hp_regen) {
-            petKey = 'pet_heal1';
-            animationKey = 'pet-heal-idle';
-        }
-        else if (this.petOwned.damage_dps) {
+        // ✨ THAY ĐỔI LOGIC: ƯU TIÊN PET TẤN CÔNG (GIỐNG LOBBY.TS)
+        if (this.petOwned.damage_dps) { // <--- KIỂM TRA PET TẤN CÔNG TRƯỚC
             petKey = 'pet_damage1';
             animationKey = 'pet-damage-idle';
         }
-             
+        else if (this.petOwned.hp_regen) { // <--- KIỂM TRA PET HỒI MÁU SAU
+            petKey = 'pet_heal1';
+            animationKey = 'pet-heal-idle';
+        }
+
         else if (this.petOwned.coin_collect) petKey = 'pet_coin';
 
         // ... (BẠN CẦN TẢI CÁC TÊN ASSET NÀY TRONG preload())
@@ -944,5 +1065,154 @@ export default class LobbyScene extends Scene {
         // Tắt các listener cố định
         this.input.keyboard!.off("keydown-Y", this.handleYes, this);
         this.input.keyboard!.off("keydown-N", this.handleNo, this);
+    }
+
+    private startQuiz(): void {
+        if (this.isQuizActive || this.isInDialogue || this.isShopOpen) return;
+
+        // ✨ KIỂM TRA TRẠNG THÁI HOÀN THÀNH ✨
+        if (this.hasCompletedQuiz) {
+            this.isInDialogue = true; // Tạm thời dùng dialogue để chặn di chuyển
+            this.player.body.setVelocity(0, 0);
+            this.player.anims.stop();
+            this.interactionPrompt.setVisible(false);
+            this.dinhLeNameText.setVisible(false);
+            this.nguyenXiNameText.setVisible(false);
+            this.quizNameText.setVisible(false);
+
+            // Hiển thị thông báo
+            this.dialogueBox.setVisible(true);
+            this.dialogueText.setVisible(true);
+            this.promptText.setVisible(true);
+
+            this.dialogueText.setText("Sử gia: Bạn đã hoàn thành tất cả câu hỏi lịch sử!");
+            this.promptText.setText("[SPACE] để tiếp tục du hành.");
+
+            // Dùng `once` với phím SPACE để đóng hộp thoại chung
+            this.input.keyboard!.once('keydown-SPACE', this.endDialogue, this);
+            return;
+        }
+
+        // --- LOGIC BẮT ĐẦU QUIZ (CHỈ KHI CHƯA HOÀN THÀNH) ---
+        this.isQuizActive = true;
+        this.currentQuestionIndex = 0; // Luôn bắt đầu từ câu đầu tiên khi tương tác lần đầu
+        this.player.body.setVelocity(0, 0);
+        this.player.anims.stop();
+        this.interactionPrompt.setVisible(false)
+
+
+
+        // Ẩn tên NPC khác và tên Quiz NPC
+        this.dinhLeNameText.setVisible(false);
+        this.nguyenXiNameText.setVisible(false);
+        this.quizNameText.setVisible(false);
+
+        // Bật Listener đáp án (SỬ DỤNG HÀM WRAPPER)
+        this.input.keyboard!.on('keydown-A', () => this.handleQuizAnswer('A'), this); // ✨ SỬA ĐỔI ✨
+        this.input.keyboard!.on('keydown-B', () => this.handleQuizAnswer('B'), this); // ✨ SỬA ĐỔI ✨
+
+        this.showQuestion();
+    }
+
+    private showQuestion(): void {
+        if (this.currentQuestionIndex >= this.quizQuestions.length) {
+            // Đã hết câu hỏi
+            this.dialogueText.setText("Chúc mừng! Bạn đã hoàn thành tất cả các câu hỏi lịch sử.");
+            this.promptText.setText("[X] để kết thúc");
+            this.promptText.setVisible(true);
+
+            // Thêm listener cho phím X để kết thúc Quiz
+            this.input.keyboard!.once('keydown-X', this.endQuiz, this);
+            return;
+        }
+
+        const questionData = this.quizQuestions[this.currentQuestionIndex];
+
+        this.dialogueBox.setVisible(true);
+        this.dialogueText.setVisible(true);
+
+        this.dialogueText.setText(`[Sử gia]: ${questionData.question}\n${questionData.options}`);
+        this.promptText.setText("Chọn đáp án: [A] hoặc [B]");
+        this.promptText.setVisible(true);
+    }
+
+    private handleQuizAnswer(answerKey: string): void {
+        if (!this.isQuizActive || this.currentQuestionIndex >= this.quizQuestions.length) return;
+
+        // const answerKey = event.originalEvent.key.toUpperCase(); // DÒNG NÀY ĐÃ BỊ XÓA ❌
+        const questionData = this.quizQuestions[this.currentQuestionIndex];
+        let message: string;
+
+        // Tắt listener tạm thời (SỬA ĐỔI CÁCH TẮT)
+        this.input.keyboard!.off('keydown-A'); // Tắt tất cả listener cho A
+        this.input.keyboard!.off('keydown-B'); // Tắt tất cả listener cho B
+
+        // ... (logic tiếp theo giữ nguyên)
+        if (answerKey === questionData.correctAnswer) {
+            this.playerCoins += this.COIN_REWARD_PER_QUESTION; // Cộng xu
+            message = `✅ Đúng rồi! Bạn nhận được ${this.COIN_REWARD_PER_QUESTION} Xu!`;
+        } else {
+            message = `❌ Sai rồi! Đáp án đúng là ${questionData.correctAnswer}.`;
+        }
+
+        // Hiển thị thông báo kết quả
+        this.dialogueText.setText(`[Sử gia]: ${message}`);
+        this.promptText.setText("[SPACE] để tiếp tục...");
+
+        // Tăng index câu hỏi
+        this.currentQuestionIndex++;
+
+        // Chuyển sang câu hỏi tiếp theo sau khi người chơi nhấn SPACE
+        this.input.keyboard!.once('keydown-SPACE', this.continueQuiz, this);
+
+        // Cập nhật hiển thị Xu
+        this.updateCoinDisplay();
+    }
+
+    private continueQuiz(): void {
+        // Bật lại listener đáp án (SỬA ĐỔI CÁCH BẬT)
+        this.input.keyboard!.on('keydown-A', () => this.handleQuizAnswer('A'), this); // ✨ SỬA ĐỔI ✨
+        this.input.keyboard!.on('keydown-B', () => this.handleQuizAnswer('B'), this); // ✨ SỬA ĐỔI ✨
+
+        // Hiển thị câu hỏi tiếp theo
+        this.showQuestion();
+    }
+
+    private endQuiz(): void {
+        // ✨ KIỂM TRA ĐÃ HOÀN THÀNH TẤT CẢ CÂU HỎI CHƯA (Index 10 sau khi trả lời câu 9) ✨
+        if (this.currentQuestionIndex >= this.quizQuestions.length) {
+            this.hasCompletedQuiz = true; // Set cờ hoàn thành
+        }
+
+
+        this.isQuizActive = false;
+        this.dialogueBox.setVisible(false);
+        this.dialogueText.setVisible(false);
+        this.promptText.setVisible(false);
+
+        // Xóa tất cả listener liên quan đến Quiz
+        this.input.keyboard!.off('keydown-A', this.handleQuizAnswer, this);
+        this.input.keyboard!.off('keydown-B', this.handleQuizAnswer, this);
+        this.input.keyboard!.off('keydown-SPACE', this.continueQuiz, this);
+        this.input.keyboard!.off('keydown-X', this.endQuiz, this); // Dọn dẹp listener cuối cùng
+
+        // Hiển thị lại tên NPC
+        this.dinhLeNameText.setVisible(true);
+        this.nguyenXiNameText.setVisible(true);
+        this.quizNameText.setVisible(true);
+
+        // Đảm bảo Player có thể di chuyển (đã được xử lý bởi cờ isQuizActive)
+    }
+
+    // ✨ HÀM HỖ TRỢ: Cập nhật hiển thị Xu (Cần tạo nếu chưa có)
+    private updateCoinDisplay(): void {
+        // Tìm đối tượng Text hiển thị Level và Xu
+        const camWidth = this.cameras.main.width;
+        const marginX = 16;
+        const marginY = 60;
+
+        if (this.uiTextLevelCoin) {
+            this.uiTextLevelCoin.setText(`Level: ${this.playerLevel} | Xu: ${this.playerCoins}`);
+        }
     }
 }

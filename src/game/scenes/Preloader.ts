@@ -43,6 +43,13 @@ export default class Preloader extends Scene {
     this.load.image('nx4', '../assets/nx4.png');
     this.load.image('nx5', '../assets/nx5.png');
 
+    // --- Sử gia ---
+    this.load.image('sg1', '../assets/sg1.png');
+    this.load.image('sg2', '../assets/sg2.png');
+    this.load.image('sg3', '../assets/sg3.png');
+    this.load.image('sg4', '../assets/sg4.png');
+    this.load.image('sg5', '../assets/sg5.png');
+
     // --- Nguyễn Trãi ---
     this.load.image('nt1', '../assets/nt1.png');
     this.load.image('nt2', '../assets/nt2.png');
