@@ -2047,15 +2047,23 @@ if (this.petOwned.damage_dps) {
 
     let animationKey: string | null = null;
 
-    // ✨ SỬ DỤNG TÊN KEY ĐÃ TẢI TRONG PRELOAD() ✨
-    if (this.petOwned.hp_regen) {
-      petKey = 'pet_heal1';
-      animationKey = 'pet-heal-idle';
+    // ✨ THAY ĐỔI LOGIC: ƯU TIÊN PET TẤN CÔNG HOẶC PET ĐÃ MUA GẦN NHẤT
+    // Nếu sở hữu Pet Tấn Công (Damage DPS), hiển thị Pet này
+    if (this.petOwned.damage_dps) { // <--- KIỂM TRA PET TẤN CÔNG TRƯỚC
+        petKey = 'pet_damage1';
+        animationKey = 'pet-damage-idle';
+    } 
+    // Nếu KHÔNG sở hữu Pet Tấn Công, kiểm tra Pet Hồi Máu
+    else if (this.petOwned.hp_regen) { // <--- KIỂM TRA PET HỒI MÁU SAU
+        petKey = 'pet_heal1';
+        animationKey = 'pet-heal-idle';
     }
-    else if (this.petOwned.damage_dps) {
-      petKey = 'pet_damage1';
-      animationKey = 'pet-damage-idle';
+    // Nếu Pet nhặt xu có tồn tại và không có Pet nào trên được chọn
+    else if (this.petOwned.coin_collect) {
+        petKey = 'pet_coin';
+        animationKey = null; // Giả sử pet này không có animation idle
     }
+    // ----------------------------------------------------
     else if (this.petOwned.coin_collect) petKey = 'pet_coin';
     // -----------------------------------------------------
 
