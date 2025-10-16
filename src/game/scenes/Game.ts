@@ -33,11 +33,12 @@ interface Coin extends Phaser.Types.Physics.Arcade.SpriteWithDynamicBody {
 
 
 export default class GameScene extends Scene {
+  private equippedPetKey: string = 'none'; // Biến mới để lưu Pet đang được chọn
 
   // ✨ BIẾN MỚI CHO QUẢNG CÁO/HỒI SINH ✨
-private respawnPanel!: Phaser.GameObjects.Container;
-private isOfferingRespawn: boolean = false;
-private readonly AD_DURATION: number = 5; // Giả lập thời gian quảng cáo 3 giây
+  private respawnPanel!: Phaser.GameObjects.Container;
+  private isOfferingRespawn: boolean = false;
+  private readonly AD_DURATION: number = 3; // Giả lập thời gian quảng cáo 3 giây
 
   // Trạng thái sở hữu Pet (Phải được truyền qua Scene)
   private petOwned: { [key: string]: boolean } = {
@@ -646,7 +647,7 @@ private readonly AD_DURATION: number = 5; // Giả lập thời gian quảng cá
     this.chargeBar = this.add.graphics().setScrollFactor(0);
 
     // ✨ DÒNG SỬA LỖI: KHỞI TẠO PANEL HỒI SINH TRONG CREATE() ✨
-this.respawnPanel = this.createRespawnPanel();
+    this.respawnPanel = this.createRespawnPanel();
   }
 
   // --- UI Logic ---
@@ -914,7 +915,7 @@ this.respawnPanel = this.createRespawnPanel();
 
     // ✨ SỬA LỖI: Chỉ kiểm tra enemy.body, không kiểm tra projectile.body nếu projectile là null
     if (!enemy || !enemy.body || !enemy.active) return;
-    
+
     // Nếu có projectile (mũi tên/tên lửa), hãy đảm bảo nó hoạt động
     if (projectile && !projectile.active) return;
 
@@ -996,35 +997,35 @@ this.respawnPanel = this.createRespawnPanel();
 
   // Khôi phục logic sát thương và hiệu ứng Invincibility
   private handlePlayerHit(player: any, target: any): void {
-    if (this.isInvincible || this.isGameOver || this.isOfferingRespawn) return; 
+    if (this.isInvincible || this.isGameOver || this.isOfferingRespawn) return;
 
     this.playerHealth -= 1;
     this.updatePlayerHealthBar();
 
     if (this.playerHealth <= 0) {
-        // ✨ LOGIC MỚI: DỪNG TRÒ CHƠI VÀ HỎI XEM QUẢNG CÁO ✨
-        this.isGameOver = true; // Set cờ Game Over (tạm thời)
-        this.player.setTint(0x000000); 
-        this.player.setVelocity(0);
-        this.player.anims.stop();
-        this.physics.world.isPaused = true; // Dừng thế giới vật lý
-
-        
-     
-
-        this.isOfferingRespawn = true;
-        // this.respawnPanel.setVisible(true);
-
-        // ✨ GỌI HÀM MỚI: Hiển thị thông báo VĨNH VIỄN trên đầu người chơi ✨
-        const adPrompt = "Xem quảng cáo để hồi sinh [Y/N]?"; 
-        this.showNotification(adPrompt, true); // True = isPersistent
+      // ✨ LOGIC MỚI: DỪNG TRÒ CHƠI VÀ HỎI XEM QUẢNG CÁO ✨
+      this.isGameOver = true; // Set cờ Game Over (tạm thời)
+      this.player.setTint(0x000000);
+      this.player.setVelocity(0);
+      this.player.anims.stop();
+      this.physics.world.isPaused = true; // Dừng thế giới vật lý
 
 
-        // Khai báo listener cho phím tắt Y/N
-        this.input.keyboard!.once('keydown-Y', () => this.handleAdRespawn(true), this);
-        this.input.keyboard!.once('keydown-N', () => this.handleAdRespawn(false), this);
-        
-        // ❌ XÓA HẾT PHẦN HIỂN THỊ "GAME OVER" VÀ SPACE NẾU CÓ ❌
+
+
+      this.isOfferingRespawn = true;
+      // this.respawnPanel.setVisible(true);
+
+      // ✨ GỌI HÀM MỚI: Hiển thị thông báo VĨNH VIỄN trên đầu người chơi ✨
+      const adPrompt = "Xem quảng cáo để hồi sinh [Y/N]?";
+      this.showNotification(adPrompt, true); // True = isPersistent
+
+
+      // Khai báo listener cho phím tắt Y/N
+      this.input.keyboard!.once('keydown-Y', () => this.handleAdRespawn(true), this);
+      this.input.keyboard!.once('keydown-N', () => this.handleAdRespawn(false), this);
+
+      // ❌ XÓA HẾT PHẦN HIỂN THỊ "GAME OVER" VÀ SPACE NẾU CÓ ❌
 
     } else {
       // 1. Bật trạng thái vô địch
@@ -1328,7 +1329,7 @@ this.respawnPanel = this.createRespawnPanel();
     }
 
     // ✨ HIỆU ỨNG PET HỒI MÁU (PET 1) ✨
-    if (this.petOwned.hp_regen) {
+    if (this.equippedPetKey === 'hp_regen') { // ✨ ĐÃ SỬA: CHỈ CHẠY NẾU ĐƯỢC TRANG BỊ ✨
       this.petRegenTimer++;
       if (this.petRegenTimer >= 300) {
         this.playerHealth = Phaser.Math.Clamp(this.playerHealth + 1, 0, this.MAX_PLAYER_HEALTH);
@@ -1337,33 +1338,33 @@ this.respawnPanel = this.createRespawnPanel();
       }
     }
 
-    // ✨ LOGIC TẤN CÔNG PET DAMAGE ✨
-    // ✨ LOGIC TẤN CÔNG PET DAMAGE ✨
-if (this.petOwned.damage_dps) {
-    this.petDamageTimer++;
-    
-    // ĐỊNH NGHĨA TẦM TẤN CÔNG (Ví dụ: 300 pixel)
-    const ATTACK_RANGE = 380; 
 
-    if (this.petDamageTimer >= this.PET_DAMAGE_RATE) {
+    // ✨ LOGIC TẤN CÔNG PET DAMAGE ✨
+    if (this.equippedPetKey === 'damage_dps') {
+      this.petDamageTimer++;
+
+      // ĐỊNH NGHĨA TẦM TẤN CÔNG (Ví dụ: 300 pixel)
+      const ATTACK_RANGE = 380;
+
+      if (this.petDamageTimer >= this.PET_DAMAGE_RATE) {
         // ✨ THAY THẾ findNearestEnemy BẰNG findNearestEnemyInRadius ✨
         const target = this.findNearestEnemyInRadius(
-            this.player.x, 
-            this.player.y, 
-            ATTACK_RANGE
-        ); 
-        
+          this.player.x,
+          this.player.y,
+          ATTACK_RANGE
+        );
+
         if (target) {
-            // Tấn công ngay lập tức (instant damage)
-            this.applyDamage(null, target, this.PET_BASE_DAMAGE, 0); 
-            
-            // Hiệu ứng thị giác
-            this.currentPetSprite?.setTint(0xff8800); 
-            this.time.delayedCall(150, () => this.currentPetSprite?.clearTint());
+          // Tấn công ngay lập tức (instant damage)
+          this.applyDamage(null, target, this.PET_BASE_DAMAGE, 0);
+
+          // Hiệu ứng thị giác
+          this.currentPetSprite?.setTint(0xff8800);
+          this.time.delayedCall(150, () => this.currentPetSprite?.clearTint());
         }
         this.petDamageTimer = 0;
+      }
     }
-}
 
     // Logic theo dõi Pet (VỊ TRÍ ĐẶT ĐÚNG)
     if (this.currentPetSprite) {
@@ -1791,39 +1792,39 @@ if (this.petOwned.damage_dps) {
 
   // --- Utility Function: Hiển thị thông báo trên đầu người chơi ---
   // ✨ THAM SỐ MỚI: isPersistent để giữ thông báo không tự hủy ✨
-private showNotification(message: string, isPersistent: boolean = false): void { 
+  private showNotification(message: string, isPersistent: boolean = false): void {
     // Hủy thông báo cũ (nếu có) để tránh tràn màn hình
     if (this.playerNotificationText && this.playerNotificationText.active) {
-        this.playerNotificationText.destroy();
+      this.playerNotificationText.destroy();
     }
 
     const playerX = this.player.x;
     const playerY = this.player.y - 150; // Đặt trên đầu nhân vật
 
     this.playerNotificationText = this.add.text(
-        playerX,
-        playerY,
-        message,
-        {
-            fontSize: "40px",
-            color: "#ffffff",
-            backgroundColor: "#333333",
-            padding: { x: 5, y: 3 }
-        }
+      playerX,
+      playerY,
+      message,
+      {
+        fontSize: "40px",
+        color: "#ffffff",
+        backgroundColor: "#333333",
+        padding: { x: 5, y: 3 }
+      }
     )
-        .setOrigin(0.5, 0)
-        .setScrollFactor(1)
-        .setDepth(999);
-        
+      .setOrigin(0.5, 0)
+      .setScrollFactor(1)
+      .setDepth(999);
+
     // ✨ LOGIC MỚI: TỰ HỦY NẾU KHÔNG PHẢI LÀ THÔNG BÁO VĨNH VIỄN ✨
     if (!isPersistent) {
-        this.time.delayedCall(1500, () => {
-            if (this.playerNotificationText) {
-                this.playerNotificationText.destroy();
-            }
-        }, [], this);
+      this.time.delayedCall(1500, () => {
+        if (this.playerNotificationText) {
+          this.playerNotificationText.destroy();
+        }
+      }, [], this);
     }
-}
+  }
   // ---------------------------------------------------------------
   // ✨ HÀM TẠO BẢNG CHỈ SỐ NHÂN VẬT ✨
 
@@ -2015,6 +2016,9 @@ private showNotification(message: string, isPersistent: boolean = false): void {
       // ✨ NHẬN TRẠNG THÁI SỞ HỮU PET ✨
       if (data && data.petOwned) {
         this.petOwned = data.petOwned;
+
+        // ✨ DÒNG SỬA LỖI: LƯU TRỮ KEY PET ĐANG ĐƯỢC TRANG BỊ ✨
+        this.equippedPetKey = data.equippedPetKey || 'none'; // Lấy key từ LobbyScene
       }
 
       this.playerLevel = data.playerLevel || 1;
@@ -2059,28 +2063,25 @@ private showNotification(message: string, isPersistent: boolean = false): void {
     }
 
     let petKey: string | null = null;
-
     let animationKey: string | null = null;
 
-    // ✨ THAY ĐỔI LOGIC: ƯU TIÊN PET TẤN CÔNG HOẶC PET ĐÃ MUA GẦN NHẤT
-    // Nếu sở hữu Pet Tấn Công (Damage DPS), hiển thị Pet này
-    if (this.petOwned.damage_dps) { // <--- KIỂM TRA PET TẤN CÔNG TRƯỚC
-        petKey = 'pet_damage1';
-        animationKey = 'pet-damage-idle';
-    } 
-    // Nếu KHÔNG sở hữu Pet Tấn Công, kiểm tra Pet Hồi Máu
-    else if (this.petOwned.hp_regen) { // <--- KIỂM TRA PET HỒI MÁU SAU
-        petKey = 'pet_heal1';
-        animationKey = 'pet-heal-idle';
+    // ✨ DÒNG SỬA LỖI CHÍNH: SỬ DỤNG KEY PET ĐANG ĐƯỢC TRANG BỊ ✨
+    const equippedKey = this.equippedPetKey; // Sử dụng biến đã được gán trong init(data)
+
+    if (equippedKey === 'damage_dps') {
+      petKey = 'pet_damage1';
+      animationKey = 'pet-damage-idle';
     }
-    // Nếu Pet nhặt xu có tồn tại và không có Pet nào trên được chọn
-    else if (this.petOwned.coin_collect) {
-        petKey = 'pet_coin';
-        animationKey = null; // Giả sử pet này không có animation idle
+    else if (equippedKey === 'hp_regen') {
+      petKey = 'pet_heal1';
+      animationKey = 'pet-heal-idle';
     }
-    // ----------------------------------------------------
-    else if (this.petOwned.coin_collect) petKey = 'pet_coin';
-    // -----------------------------------------------------
+    else if (equippedKey === 'coin_collect') {
+      petKey = 'pet_coin';
+      animationKey = null;
+    }
+
+    // Lưu ý: Nếu equippedKey là 'none' (chưa chọn Pet nào) thì petKey vẫn là null.
 
     if (petKey) {
       // Đảm bảo this.player và this.ground đã được khởi tạo
@@ -2090,16 +2091,16 @@ private showNotification(message: string, isPersistent: boolean = false): void {
       }
 
       // 2. Tạo Pet Sprite mới
-      this.currentPetSprite = this.physics.add.sprite(this.player.x - 50, this.player.y - 50, petKey) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+      // Vị trí: Đặt hơi lùi về phía sau player (-50) và thấp hơn (dưới -50 so với player.y)
+      this.currentPetSprite = this.physics.add.sprite(this.player.x - 50, this.player.y, petKey) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
 
       this.currentPetSprite.setOrigin(0.5, 1);
       this.currentPetSprite.body.allowGravity = true;
-      this.physics.add.collider(this.currentPetSprite, this.ground); // Pet cũng đứng trên đất
-      this.currentPetSprite.setScale(0.8); // Giảm kích thước Pet
+      this.physics.add.collider(this.currentPetSprite, this.ground);
+      this.currentPetSprite.setScale(0.8);
 
       // 3. CHẠY HOẠT ẢNH NẾU CÓ
       if (animationKey) {
-        // Lỗi cũ đã được xử lý bằng dấu (!)
         this.currentPetSprite.play(animationKey!, true);
       }
     }
@@ -2107,132 +2108,132 @@ private showNotification(message: string, isPersistent: boolean = false): void {
 
   // Trong GameScene.ts (Thêm hàm này)
 
-private findNearestEnemyInRadius(x: number, y: number, radius: number): GameCharacter | null {
+  private findNearestEnemyInRadius(x: number, y: number, radius: number): GameCharacter | null {
     let nearestEnemy: GameCharacter | null = null;
     let minDistance = Infinity;
 
     this.enemies.getChildren().forEach((enemy: any) => {
-        const char = enemy as GameCharacter;
-        if (char.active) {
-            const distance = Phaser.Math.Distance.Between(x, y, char.x, char.y);
-            
-            // CHỈ XÉT KẺ ĐỊCH NẰM TRONG PHẠM VI
-            if (distance < radius) { 
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestEnemy = char;
-                }
-            }
+      const char = enemy as GameCharacter;
+      if (char.active) {
+        const distance = Phaser.Math.Distance.Between(x, y, char.x, char.y);
+
+        // CHỈ XÉT KẺ ĐỊCH NẰM TRONG PHẠM VI
+        if (distance < radius) {
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestEnemy = char;
+          }
         }
+      }
     });
 
     return nearestEnemy;
-}
+  }
 
-private createRespawnPanel(): Phaser.GameObjects.Container {
+  private createRespawnPanel(): Phaser.GameObjects.Container {
     const camWidth = this.cameras.main.width;
     const camHeight = this.cameras.main.height;
 
     // 1. Nền mờ đè lên Game Over
     const overlay = this.add.rectangle(0, 0, camWidth, camHeight, 0x000000, 0.9)
-        .setOrigin(0);
+      .setOrigin(0);
 
     // 2. Panel chính
     const panel = this.add.rectangle(0, 0, 450, 250, 0x1a1a1a, 1)
-        .setOrigin(0.5).setStrokeStyle(4, 0xffd700);
+      .setOrigin(0.5).setStrokeStyle(4, 0xffd700);
 
     // 3. Tiêu đề
     const title = this.add.text(0, -90, "TƯỚNG QUÂN ĐÃ NGÃ XUỐNG", {
-        fontSize: "28px",
-        color: "#ff3333",
-        fontStyle: "bold"
+      fontSize: "28px",
+      color: "#ff3333",
+      fontStyle: "bold"
     }).setOrigin(0.5);
 
     // 4. Lựa chọn
     const prompt = this.add.text(0, -30, "Xem quảng cáo để hồi sinh và tiếp tục chiến đấu?", {
-        fontSize: "20px",
-        color: "#ffffff",
-        align: 'center'
+      fontSize: "20px",
+      color: "#ffffff",
+      align: 'center'
     }).setOrigin(0.5);
 
     // 5. Nút CHẤP NHẬN (Yes)
-    const yesBtn = this.add.text(-100, 50, "✅ CHẤP NHẬN (Y)", { 
-        fontSize: "24px", 
-        color: "#00ff00", 
-        backgroundColor: "#222222",
-        padding: { x: 10, y: 5 }
+    const yesBtn = this.add.text(-100, 50, "✅ CHẤP NHẬN (Y)", {
+      fontSize: "24px",
+      color: "#00ff00",
+      backgroundColor: "#222222",
+      padding: { x: 10, y: 5 }
     }).setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.handleAdRespawn(true));
 
     // 6. Nút TỪ CHỐI (No)
     const noBtn = this.add.text(100, 50, "❌ TỪ CHỐI (N)", {
-        fontSize: "24px", 
-        color: "#ff0000", 
-        backgroundColor: "#222222",
-        padding: { x: 10, y: 5 }
+      fontSize: "24px",
+      color: "#ff0000",
+      backgroundColor: "#222222",
+      padding: { x: 10, y: 5 }
     }).setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.handleAdRespawn(false));
 
     const container = this.add.container(camWidth / 2, camHeight / 2, [
-        overlay, panel, title, prompt, yesBtn, noBtn
+      overlay, panel, title, prompt, yesBtn, noBtn
     ]);
 
     container.setScrollFactor(0);
     container.setDepth(3000);
     container.setVisible(false);
     return container;
-}
+  }
 
-private handleAdRespawn(accepted: boolean): void {
+  private handleAdRespawn(accepted: boolean): void {
     const YOUTUBE_AD_LINK = "https://www.youtube.com/watch?v=Bx9S5d1Us-I"; // ✨ THAY THẾ BẰNG LINK QUẢNG CÁO CỦA BẠN ✨
 
     // Dọn dẹp listener phím Y/N
     this.input.keyboard!.off('keydown-Y');
     this.input.keyboard!.off('keydown-N');
-    
+
     this.isOfferingRespawn = false;
     this.physics.world.isPaused = false;
 
     if (this.playerNotificationText) {
-        this.playerNotificationText.destroy();
+      this.playerNotificationText.destroy();
     }
-    
-    if (accepted) {
-        // ✨ BƯỚC MỚI: MỞ CỬA SỔ QUẢNG CÁO MÔ PHỎNG ✨
-        const adWindow = window.open(YOUTUBE_AD_LINK, "_blank"); // Mở tab mới
-        
-        this.showNotification(`Đang xem quảng cáo... (${this.AD_DURATION}s)`, true);
-        this.player.body.enable = false; // Chặn input và di chuyển
 
-        this.time.delayedCall(this.AD_DURATION * 1000, () => {
-            
-            // Đóng cửa sổ quảng cáo (Nếu có thể, tùy thuộc vào trình duyệt)
-            if (adWindow) {
-                 adWindow.close(); 
-            }
-            
-            this.respawnPlayer(); // Hồi sinh sau khi "xem xong"
-        }, [], this);
+    if (accepted) {
+      // ✨ BƯỚC MỚI: MỞ CỬA SỔ QUẢNG CÁO MÔ PHỎNG ✨
+      const adWindow = window.open(YOUTUBE_AD_LINK, "_blank"); // Mở tab mới
+
+      this.showNotification(`Đang xem quảng cáo...`, true);
+      this.player.body.enable = false; // Chặn input và di chuyển
+
+      this.time.delayedCall(this.AD_DURATION * 1000, () => {
+
+        // Đóng cửa sổ quảng cáo (Nếu có thể, tùy thuộc vào trình duyệt)
+        if (adWindow) {
+          adWindow.close();
+        }
+
+        this.respawnPlayer(); // Hồi sinh sau khi "xem xong"
+      }, [], this);
 
     } else {
-        // Nếu TỪ CHỐI, kết thúc Game Over
-        this.gameOver();
+      // Nếu TỪ CHỐI, kết thúc Game Over
+      this.gameOver();
     }
-}
+  }
 
-// Hàm hồi sinh thực tế (KHÔNG reset điểm/xu)
-private respawnPlayer(): void {
+  // Hàm hồi sinh thực tế (KHÔNG reset điểm/xu)
+  private respawnPlayer(): void {
     this.isGameOver = false; // Tắt cờ Game Over
     this.player.clearTint();
     this.player.body.enable = true; // Bật lại di chuyển
-    
+
     // Hồi lại máu
     // Sử dụng baseMaxHealth đã tăng theo Level
-    this.playerHealth = Math.floor(this.baseMaxHealth); 
+    this.playerHealth = Math.floor(this.baseMaxHealth);
     this.updatePlayerHealthBar();
-    
+
     // Hồi lại mana
     this.playerMana = this.maxMana;
     this.updateManaBar();
@@ -2241,33 +2242,33 @@ private respawnPlayer(): void {
     // this.player.setPosition(this.player.x, this.player.y - 100); 
 
     this.showNotification("✨ Hồi sinh thành công!");
-    
+
     // Đảm bảo không còn vô địch nếu đang ở trạng thái đó
     this.isInvincible = false;
-}
+  }
 
-// Hàm kết thúc trò chơi (Nếu từ chối quảng cáo hoặc không có quảng cáo)
-private gameOver(): void {
+  // Hàm kết thúc trò chơi (Nếu từ chối quảng cáo hoặc không có quảng cáo)
+  private gameOver(): void {
     this.player.body.enable = false; // Dừng hoàn toàn
-    this.isGameOver = true; 
+    this.isGameOver = true;
 
     const gameOverMessage = `Game Over!\nTổng điểm: ${this.totalScore}\nXu kiếm được: ${this.playerCoins}\nNhấn SPACE để chơi lại`;
 
     this.gameOverText = this.add
-        .text(
-            this.cameras.main.width / 2,
-            this.cameras.main.height / 2,
-            gameOverMessage,
-            {
-                fontSize: "40px",
-                color: "#ffffff",
-                backgroundColor: "#000000",
-                align: 'center'
-            }
-        )
-        .setOrigin(0.5)
-        .setScrollFactor(0)
-        .setDepth(3000); // Đảm bảo hiển thị trên mọi thứ
-}
+      .text(
+        this.cameras.main.width / 2,
+        this.cameras.main.height / 2,
+        gameOverMessage,
+        {
+          fontSize: "40px",
+          color: "#ffffff",
+          backgroundColor: "#000000",
+          align: 'center'
+        }
+      )
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(3000); // Đảm bảo hiển thị trên mọi thứ
+  }
 
 }
