@@ -1,6 +1,7 @@
 // GameScene.ts
 import { Scene } from "phaser";
 
+
 // Khai báo kiểu dữ liệu cho Enemy/Boss (mở rộng từ SpriteWithDynamicBody)
 interface GameCharacter extends Phaser.Types.Physics.Arcade.SpriteWithDynamicBody {
   health: number;
@@ -32,6 +33,11 @@ interface Coin extends Phaser.Types.Physics.Arcade.SpriteWithDynamicBody {
 
 
 export default class GameScene extends Scene {
+
+  // ✨ BIẾN MỚI CHO QUẢNG CÁO/HỒI SINH ✨
+private respawnPanel!: Phaser.GameObjects.Container;
+private isOfferingRespawn: boolean = false;
+private readonly AD_DURATION: number = 5; // Giả lập thời gian quảng cáo 3 giây
 
   // Trạng thái sở hữu Pet (Phải được truyền qua Scene)
   private petOwned: { [key: string]: boolean } = {
@@ -638,6 +644,9 @@ export default class GameScene extends Scene {
 
     // --- Charge bar (Giữ nguyên) ---
     this.chargeBar = this.add.graphics().setScrollFactor(0);
+
+    // ✨ DÒNG SỬA LỖI: KHỞI TẠO PANEL HỒI SINH TRONG CREATE() ✨
+this.respawnPanel = this.createRespawnPanel();
   }
 
   // --- UI Logic ---
@@ -987,33 +996,35 @@ export default class GameScene extends Scene {
 
   // Khôi phục logic sát thương và hiệu ứng Invincibility
   private handlePlayerHit(player: any, target: any): void {
-    if (this.isInvincible || this.isGameOver) return; // Nếu đang vô địch hoặc Game Over, bỏ qua
+    if (this.isInvincible || this.isGameOver || this.isOfferingRespawn) return; 
 
     this.playerHealth -= 1;
-    this.updatePlayerHealthBar(); // Cập nhật thanh máu mới
+    this.updatePlayerHealthBar();
 
     if (this.playerHealth <= 0) {
-      this.isGameOver = true;
-      this.player.setTint(0x000000); // Nhân vật đen
-      this.player.setVelocity(0);
-      this.player.anims.stop();
+        // ✨ LOGIC MỚI: DỪNG TRÒ CHƠI VÀ HỎI XEM QUẢNG CÁO ✨
+        this.isGameOver = true; // Set cờ Game Over (tạm thời)
+        this.player.setTint(0x000000); 
+        this.player.setVelocity(0);
+        this.player.anims.stop();
+        this.physics.world.isPaused = true; // Dừng thế giới vật lý
 
-      const gameOverMessage = `Game Over!\nTổng điểm: ${this.totalScore}\nNhấn SPACE để chơi lại`;
+        
+     
 
-      this.gameOverText = this.add
-        .text(
-          this.cameras.main.width / 2,
-          this.cameras.main.height / 2,
-          gameOverMessage,
-          {
-            fontSize: "40px",
-            color: "#ffffff",
-            backgroundColor: "#000000",
-            align: 'center'
-          }
-        )
-        .setOrigin(0.5)
-        .setScrollFactor(0);
+        this.isOfferingRespawn = true;
+        // this.respawnPanel.setVisible(true);
+
+        // ✨ GỌI HÀM MỚI: Hiển thị thông báo VĨNH VIỄN trên đầu người chơi ✨
+        const adPrompt = "Xem quảng cáo để hồi sinh [Y/N]?"; 
+        this.showNotification(adPrompt, true); // True = isPersistent
+
+
+        // Khai báo listener cho phím tắt Y/N
+        this.input.keyboard!.once('keydown-Y', () => this.handleAdRespawn(true), this);
+        this.input.keyboard!.once('keydown-N', () => this.handleAdRespawn(false), this);
+        
+        // ❌ XÓA HẾT PHẦN HIỂN THỊ "GAME OVER" VÀ SPACE NẾU CÓ ❌
 
     } else {
       // 1. Bật trạng thái vô địch
@@ -1429,7 +1440,7 @@ if (this.petOwned.damage_dps) {
     // THÊM ĐIỀU KIỆN KIỂM TRA MANA: this.playerMana >= this.ULTIMATE_COST
     const canUseUltimate = this.playerMana >= this.ULTIMATE_COST;
     // ✨ THÊM ĐIỀU KIỆN CẤP ĐỘ 5 ✨
-    const canUnlockUltimate = this.playerLevel >= 4;
+    const canUnlockUltimate = this.playerLevel >= 2;
     //     const isUltimateCharging = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging && canUseUltimate; 
 
     // PHẢI KIỂM TRA CẤP ĐỘ (canUnlockUltimate) NGAY Ở ĐÂY
@@ -1448,7 +1459,7 @@ if (this.petOwned.damage_dps) {
     } else if (this.ultimateKey.isDown && !canUnlockUltimate) {
       // Báo hiệu chưa mở khóa (ví dụ: nháy màu xanh dương)
       this.player.setTint(0x00aaff);
-      this.showNotification("Bạn cần đạt cấp 4 để sử dụng hỏa tiễn!");
+      this.showNotification("Bạn cần đạt cấp 2 để sử dụng hỏa tiễn!");
     } else if (this.ultimateKey.isDown && !canUseUltimate) {
       // Hiệu ứng báo không đủ mana (Chỉ cần set tint đỏ/nhấp nháy)
       this.player.setTint(0xcc0000);
@@ -1474,7 +1485,7 @@ if (this.petOwned.damage_dps) {
     //     }
 
     // Kích hoạt chiêu Triệu hồi lính (Nút D)
-    const canSummonSoldier = this.playerLevel >= 5; // ✨ ĐIỀU KIỆN CẤP ĐỘ 5 ✨
+    const canSummonSoldier = this.playerLevel >= 3; // ✨ ĐIỀU KIỆN CẤP ĐỘ 5 ✨
 
     if (Phaser.Input.Keyboard.JustDown(this.soldierKey) && !this.isCharging && !this.isUltimateCharging) {
       if (canSummonSoldier) {
@@ -1482,7 +1493,7 @@ if (this.petOwned.damage_dps) {
       } else {
         // Hiệu ứng báo chưa mở khóa (ví dụ: nháy màu xanh lá)
         this.player.setTint(0x00ff00);
-        this.showNotification("Bạn cần đạt cấp 5 để triệu hồi lính!");
+        this.showNotification("Bạn cần đạt cấp 3 để triệu hồi lính!");
         this.time.delayedCall(100, () => this.player.clearTint());
       }
     }
@@ -1693,10 +1704,10 @@ if (this.petOwned.damage_dps) {
     scoreText.setText(`Tổng điểm: ${this.totalScore}`);
 
     // Cập nhật trạng thái mở khóa
-    ultStatus.setText(`Hỏa tiễn (S): ${this.ultimateUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần Cấp 4`}`)
+    ultStatus.setText(`Hỏa tiễn (S): ${this.ultimateUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần 2`}`)
       .setColor(this.ultimateUnlocked ? '#ffd700' : '#00aaff');
 
-    soldierStatus.setText(`Triệu hồi (D): ${this.soldierUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần Cấp 5`}`)
+    soldierStatus.setText(`Triệu hồi (D): ${this.soldierUnlocked ? 'ĐÃ MỞ KHÓA' : `Cần Cấp 3`}`)
       .setColor(this.soldierUnlocked ? '#00ff00' : '#88ff88');
   }
 
@@ -1757,7 +1768,7 @@ if (this.petOwned.damage_dps) {
       this.updateManaBar();
 
       // ✨ 5. LOGIC THÔNG BÁO MỞ KHÓA KỸ NĂNG ✨
-      if (this.playerLevel >= 4 && !this.ultimateUnlocked) {
+      if (this.playerLevel >= 2 && !this.ultimateUnlocked) {
         this.ultimateUnlocked = true;
         // Dùng delayedCall để thông báo hiện sau thông báo lên cấp
         this.time.delayedCall(2000, () => {
@@ -1765,7 +1776,7 @@ if (this.petOwned.damage_dps) {
         }, [], this);
       }
 
-      if (this.playerLevel >= 5 && !this.soldierUnlocked) {
+      if (this.playerLevel >= 3 && !this.soldierUnlocked) {
         this.soldierUnlocked = true;
         // Dùng delayedCall để thông báo hiện sau thông báo lên cấp
         this.time.delayedCall(2500, () => {
@@ -1779,36 +1790,40 @@ if (this.petOwned.damage_dps) {
   // -------------------------------------------------------------------------
 
   // --- Utility Function: Hiển thị thông báo trên đầu người chơi ---
-  private showNotification(message: string): void {
+  // ✨ THAM SỐ MỚI: isPersistent để giữ thông báo không tự hủy ✨
+private showNotification(message: string, isPersistent: boolean = false): void { 
     // Hủy thông báo cũ (nếu có) để tránh tràn màn hình
     if (this.playerNotificationText && this.playerNotificationText.active) {
-      this.playerNotificationText.destroy();
+        this.playerNotificationText.destroy();
     }
 
     const playerX = this.player.x;
     const playerY = this.player.y - 150; // Đặt trên đầu nhân vật
 
     this.playerNotificationText = this.add.text(
-      playerX,
-      playerY,
-      message,
-      {
-        fontSize: "18px",
-        color: "#ffffff",
-        backgroundColor: "#333333",
-        padding: { x: 5, y: 3 }
-      }
+        playerX,
+        playerY,
+        message,
+        {
+            fontSize: "40px",
+            color: "#ffffff",
+            backgroundColor: "#333333",
+            padding: { x: 5, y: 3 }
+        }
     )
-      .setOrigin(0.5, 0)
-      .setScrollFactor(1)
-      .setDepth(999);
-    // Tự hủy sau 1.5 giây
-    this.time.delayedCall(1500, () => {
-      if (this.playerNotificationText) {
-        this.playerNotificationText.destroy();
-      }
-    }, [], this);
-  }
+        .setOrigin(0.5, 0)
+        .setScrollFactor(1)
+        .setDepth(999);
+        
+    // ✨ LOGIC MỚI: TỰ HỦY NẾU KHÔNG PHẢI LÀ THÔNG BÁO VĨNH VIỄN ✨
+    if (!isPersistent) {
+        this.time.delayedCall(1500, () => {
+            if (this.playerNotificationText) {
+                this.playerNotificationText.destroy();
+            }
+        }, [], this);
+    }
+}
   // ---------------------------------------------------------------
   // ✨ HÀM TẠO BẢNG CHỈ SỐ NHÂN VẬT ✨
 
@@ -1842,8 +1857,8 @@ if (this.petOwned.damage_dps) {
     const scoreText = this.add.text(-150, startY + lineHeight * 5, "Tổng điểm: 0", { fontSize: "18px", color: "#ffffff" }).setOrigin(0, 0.5);
 
     // Ghi chú mở khóa
-    const ultStatus = this.add.text(-150, startY + lineHeight * 7, "Hỏa tiễn (S): Cấp 4", { fontSize: "16px", color: "#00aaff" }).setOrigin(0, 0.5);
-    const soldierStatus = this.add.text(-150, startY + lineHeight * 8, "Triệu hồi (D): Cấp 5", { fontSize: "16px", color: "#00ff00" }).setOrigin(0, 0.5);
+    const ultStatus = this.add.text(-150, startY + lineHeight * 7, "Hỏa tiễn (S): Cấp 2", { fontSize: "16px", color: "#00aaff" }).setOrigin(0, 0.5);
+    const soldierStatus = this.add.text(-150, startY + lineHeight * 8, "Triệu hồi (D): 3", { fontSize: "16px", color: "#00ff00" }).setOrigin(0, 0.5);
 
     // Tạo Container
     const panel = this.add.container(camWidth / 2, camHeight / 2, [
@@ -2112,6 +2127,147 @@ private findNearestEnemyInRadius(x: number, y: number, radius: number): GameChar
     });
 
     return nearestEnemy;
+}
+
+private createRespawnPanel(): Phaser.GameObjects.Container {
+    const camWidth = this.cameras.main.width;
+    const camHeight = this.cameras.main.height;
+
+    // 1. Nền mờ đè lên Game Over
+    const overlay = this.add.rectangle(0, 0, camWidth, camHeight, 0x000000, 0.9)
+        .setOrigin(0);
+
+    // 2. Panel chính
+    const panel = this.add.rectangle(0, 0, 450, 250, 0x1a1a1a, 1)
+        .setOrigin(0.5).setStrokeStyle(4, 0xffd700);
+
+    // 3. Tiêu đề
+    const title = this.add.text(0, -90, "TƯỚNG QUÂN ĐÃ NGÃ XUỐNG", {
+        fontSize: "28px",
+        color: "#ff3333",
+        fontStyle: "bold"
+    }).setOrigin(0.5);
+
+    // 4. Lựa chọn
+    const prompt = this.add.text(0, -30, "Xem quảng cáo để hồi sinh và tiếp tục chiến đấu?", {
+        fontSize: "20px",
+        color: "#ffffff",
+        align: 'center'
+    }).setOrigin(0.5);
+
+    // 5. Nút CHẤP NHẬN (Yes)
+    const yesBtn = this.add.text(-100, 50, "✅ CHẤP NHẬN (Y)", { 
+        fontSize: "24px", 
+        color: "#00ff00", 
+        backgroundColor: "#222222",
+        padding: { x: 10, y: 5 }
+    }).setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.handleAdRespawn(true));
+
+    // 6. Nút TỪ CHỐI (No)
+    const noBtn = this.add.text(100, 50, "❌ TỪ CHỐI (N)", {
+        fontSize: "24px", 
+        color: "#ff0000", 
+        backgroundColor: "#222222",
+        padding: { x: 10, y: 5 }
+    }).setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.handleAdRespawn(false));
+
+    const container = this.add.container(camWidth / 2, camHeight / 2, [
+        overlay, panel, title, prompt, yesBtn, noBtn
+    ]);
+
+    container.setScrollFactor(0);
+    container.setDepth(3000);
+    container.setVisible(false);
+    return container;
+}
+
+private handleAdRespawn(accepted: boolean): void {
+    const YOUTUBE_AD_LINK = "https://www.youtube.com/watch?v=Bx9S5d1Us-I"; // ✨ THAY THẾ BẰNG LINK QUẢNG CÁO CỦA BẠN ✨
+
+    // Dọn dẹp listener phím Y/N
+    this.input.keyboard!.off('keydown-Y');
+    this.input.keyboard!.off('keydown-N');
+    
+    this.isOfferingRespawn = false;
+    this.physics.world.isPaused = false;
+
+    if (this.playerNotificationText) {
+        this.playerNotificationText.destroy();
+    }
+    
+    if (accepted) {
+        // ✨ BƯỚC MỚI: MỞ CỬA SỔ QUẢNG CÁO MÔ PHỎNG ✨
+        const adWindow = window.open(YOUTUBE_AD_LINK, "_blank"); // Mở tab mới
+        
+        this.showNotification(`Đang xem quảng cáo... (${this.AD_DURATION}s)`, true);
+        this.player.body.enable = false; // Chặn input và di chuyển
+
+        this.time.delayedCall(this.AD_DURATION * 1000, () => {
+            
+            // Đóng cửa sổ quảng cáo (Nếu có thể, tùy thuộc vào trình duyệt)
+            if (adWindow) {
+                 adWindow.close(); 
+            }
+            
+            this.respawnPlayer(); // Hồi sinh sau khi "xem xong"
+        }, [], this);
+
+    } else {
+        // Nếu TỪ CHỐI, kết thúc Game Over
+        this.gameOver();
+    }
+}
+
+// Hàm hồi sinh thực tế (KHÔNG reset điểm/xu)
+private respawnPlayer(): void {
+    this.isGameOver = false; // Tắt cờ Game Over
+    this.player.clearTint();
+    this.player.body.enable = true; // Bật lại di chuyển
+    
+    // Hồi lại máu
+    // Sử dụng baseMaxHealth đã tăng theo Level
+    this.playerHealth = Math.floor(this.baseMaxHealth); 
+    this.updatePlayerHealthBar();
+    
+    // Hồi lại mana
+    this.playerMana = this.maxMana;
+    this.updateManaBar();
+
+    // Thiết lập lại vị trí an toàn (hoặc giữ nguyên nếu bạn muốn hồi sinh tại chỗ chết)
+    // this.player.setPosition(this.player.x, this.player.y - 100); 
+
+    this.showNotification("✨ Hồi sinh thành công!");
+    
+    // Đảm bảo không còn vô địch nếu đang ở trạng thái đó
+    this.isInvincible = false;
+}
+
+// Hàm kết thúc trò chơi (Nếu từ chối quảng cáo hoặc không có quảng cáo)
+private gameOver(): void {
+    this.player.body.enable = false; // Dừng hoàn toàn
+    this.isGameOver = true; 
+
+    const gameOverMessage = `Game Over!\nTổng điểm: ${this.totalScore}\nXu kiếm được: ${this.playerCoins}\nNhấn SPACE để chơi lại`;
+
+    this.gameOverText = this.add
+        .text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            gameOverMessage,
+            {
+                fontSize: "40px",
+                color: "#ffffff",
+                backgroundColor: "#000000",
+                align: 'center'
+            }
+        )
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(3000); // Đảm bảo hiển thị trên mọi thứ
 }
 
 }
