@@ -93,6 +93,9 @@ export default class LobbyScene extends Scene {
         coin_collect: false
     };
 
+    // ✨ BIẾN MỚI: Theo dõi Pet đang được trang bị (mặc định là Pet hồi máu nếu sở hữu) ✨
+    private currentEquippedPetKey: string = 'none'; // 'none', 'hp_regen', 'damage_dps', etc.
+
     // Định nghĩa giá Pet
     private readonly PET_PRICES: { [key: string]: number } = {
         hp_regen: 200,
@@ -735,6 +738,8 @@ export default class LobbyScene extends Scene {
             currentExp: this.expData.currentExp,
             requiredExp: this.expData.requiredExp,
             petOwned: this.petOwned,
+            // ✨ DÒNG THÊM: TRUYỀN PET ĐANG TRANG BỊ SANG GAME SCENE ✨
+        equippedPetKey: this.currentEquippedPetKey,
         };
 
         // Truyền data qua hàm start()
@@ -796,6 +801,15 @@ export default class LobbyScene extends Scene {
                 currentExp: data.currentExp || 0,
                 requiredExp: data.requiredExp || 10
             };
+
+            // ✨ THÊM LOGIC ĐẶT PET ĐANG TRANG BỊ MẶC ĐỊNH LẦN ĐẦU ✨
+        if (this.currentEquippedPetKey === 'none') {
+            if (this.petOwned.damage_dps) {
+                this.currentEquippedPetKey = 'damage_dps';
+            } else if (this.petOwned.hp_regen) {
+                this.currentEquippedPetKey = 'hp_regen';
+            }
+        }
 
             console.log("Dữ liệu Xu đã được giữ lại trong Lobby:", this.playerCoins);
         }
@@ -865,68 +879,73 @@ export default class LobbyScene extends Scene {
         const petElements: Phaser.GameObjects.Container[] = [];
         const petListYOffset = -100; // Vị trí Y bắt đầu của Pet list
 
-        pets.forEach((pet, index) => {
-            const isOwned = this.petOwned[pet.key];
-            const hasMoney = this.playerCoins >= pet.price;
+       pets.forEach((pet, index) => {
+        const isOwned = this.petOwned[pet.key];
+        const hasMoney = this.playerCoins >= pet.price;
+        const isEquipped = this.currentEquippedPetKey === pet.key; 
 
-            const statusText = isOwned ? 'ĐÃ SỞ HỮU' : `${pet.price} XU`;
-            const statusColor = isOwned ? '#00ff00' : (hasMoney ? '#ffff00' : '#ff0000');
-            const bgColor = isOwned ? 0x005500 : (hasMoney ? 0x553300 : 0x330000); // Màu nền nút
+        // ✨ XỬ LÝ TEXT VÀ MÀU SẮC DỰA TRÊN TRẠNG THÁI ✨
+        let statusText = `${pet.price} XU`;
+        let bgColor = hasMoney ? 0x553300 : 0x330000;
+        let isPurchasable = hasMoney && !isOwned; // Cờ để mua (chưa sở hữu + đủ tiền)
+        let isSelectable = isOwned; // Cờ để chọn (đã sở hữu)
 
-            // 1. Text mô tả Pet
-            const petText = this.add.text(-250, 0,
-                `PET: ${pet.name}\n[${pet.desc}]`,
-                { fontSize: '18px', color: '#ffffff', wordWrap: { width: 350 } })
-                .setOrigin(0, 0.5);
+        if (isEquipped) {
+            statusText = 'ĐANG CHỌN';
+            bgColor = 0x008800;
+        } else if (isOwned) {
+            statusText = 'ĐÃ SỞ HỮU';
+            bgColor = 0x005500;
+        }
+        
+        // ... (phần tạo petText, priceBox, priceText, petContainer giữ nguyên)
+        const petText = this.add.text(-250, 0,
+            `PET: ${pet.name}\n[${pet.desc}]`,
+            { fontSize: '18px', color: '#ffffff', wordWrap: { width: 350 } })
+            .setOrigin(0, 0.5);
 
-            // 2. Nút/Text Giá
-            const priceBox = this.add.rectangle(150, 0, 150, 40, bgColor)
-                .setOrigin(0.5);
+        const priceBox = this.add.rectangle(150, 0, 150, 40, bgColor)
+            .setOrigin(0.5)
+            .setStrokeStyle(2, isEquipped ? 0x00ff00 : 0xcccccc); 
 
-            const priceText = this.add.text(150, 0, statusText,
-                { fontSize: '20px', color: '#ffffff', fontStyle: 'bold' })
-                .setOrigin(0.5);
+        const priceText = this.add.text(150, 0, statusText,
+            { fontSize: '16px', color: '#ffffff', fontStyle: 'bold' })
+            .setOrigin(0.5);
 
-            const petContainer = this.add.container(0, petListYOffset + index * 100, [
-                petText, priceBox, priceText
-            ]);
+        const petContainer = this.add.container(0, petListYOffset + index * 100, [
+            petText, priceBox, priceText
+        ]);
 
-            // 3. LOGIC TƯƠNG TÁC (Chỉ cho phép nếu CHƯA SỞ HỮU và ĐỦ XU)
-            if (!isOwned && hasMoney) {
-                // ✨ Đặt tương tác lên priceBox (hình chữ nhật)
-                priceBox.setInteractive({ useHandCursor: true });
 
-                // ✨ ĐẶT TƯƠNG TÁC LÊN TEXT ĐỂ ĐẢM BẢO KHÔNG BỊ CHẶN ✨
-                priceText.setInteractive({ useHandCursor: true });
+        // ✨ DÒNG SỬA LỖI: LOGIC TƯƠNG TÁC ✨
+        if (isPurchasable || isSelectable) { 
+            priceBox.setInteractive({ useHandCursor: true });
+            priceText.setInteractive({ useHandCursor: true });
 
-                // Kích hoạt cửa sổ xác nhận khi click vào bất kỳ đâu trên nút
-                const clickHandler = () => this.showConfirmation(pet.key, pet.name, pet.price);
+            const clickHandler = () => {
+                if (isSelectable) { // Nếu đã sở hữu (isOwned = true)
+                    this.equipPet(pet.key);
+                } else if (isPurchasable) { // Nếu chưa sở hữu NHƯNG đủ tiền
+                    this.showConfirmation(pet.key, pet.name, pet.price);
+                }
+            };
 
-                priceBox.on('pointerdown', clickHandler);
-                priceText.on('pointerdown', clickHandler); // ✨ CÙNG CHỨC NĂNG CLICK ✨
+            priceBox.on('pointerdown', clickHandler);
+            priceText.on('pointerdown', clickHandler); 
 
-                // Thêm hiệu ứng hover nhẹ (tùy chọn)
-                const originalColor = bgColor;
-                const hoverColor = 0x775500;
+            // Thêm hiệu ứng hover nhẹ (cho cả Mua và Chọn)
+            const originalColor = bgColor;
+            const hoverColor = isSelectable ? 0x00aa00 : 0x775500; // Xanh đậm nếu là Chọn
 
-                // Sử dụng hover chung cho cả box và text
-                priceBox.on('pointerover', () => {
-                    priceBox.setFillStyle(hoverColor);
-                });
-                priceBox.on('pointerout', () => {
-                    priceBox.setFillStyle(originalColor);
-                });
-                // Gán lại sự kiện hover cho priceText để nó không ghi đè.
-                priceText.on('pointerover', () => {
-                    priceBox.setFillStyle(hoverColor);
-                });
-                priceText.on('pointerout', () => {
-                    priceBox.setFillStyle(originalColor);
-                });
-            }
+            priceBox.on('pointerover', () => { priceBox.setFillStyle(hoverColor); });
+            priceBox.on('pointerout', () => { priceBox.setFillStyle(originalColor); });
+            priceText.on('pointerover', () => { priceBox.setFillStyle(hoverColor); });
+            priceText.on('pointerout', () => { priceBox.setFillStyle(originalColor); });
+        }
+        // ✨ KẾT THÚC KHỐI SỬA LỖI ✨
 
-            petElements.push(petContainer);
-        });
+        petElements.push(petContainer);
+    });
 
         const shopContainer = this.add.container(camWidth / 2, camHeight / 2, [
             shopBox, shopTitle, closeBtn, currentXuText, ...petElements
@@ -978,10 +997,13 @@ export default class LobbyScene extends Scene {
                 // BƯỚC 1: TRỪ XU VÀ CẬP NHẬT TRẠNG THÁI
                 this.playerCoins -= price;
                 this.petOwned[petKey] = true;
+                this.updateCoinDisplay();
+                this.currentEquippedPetKey = petKey; // ✨ TỰ ĐỘNG TRANG BỊ PET MỚI MUA ✨
 
                 // BƯỚC 2: KHỞI TẠO LẠI SHOP PANEL VÀ HIỂN THỊ PET ✨
                 this.shopPanel?.destroy();
                 this.shopPanel = this.createShopPanel();
+                
 
                 this.displayPet(); // ✨ GỌI HÀM NÀY ĐỂ HIỂN THỊ PET MỚI MUA ✨
 
@@ -1010,50 +1032,62 @@ export default class LobbyScene extends Scene {
 
     // Trong Lobby.ts
 
-    private displayPet(): void {
-        // 1. Nếu Pet đang hiển thị, hủy nó đi
-        if (this.currentPetSprite) {
-            this.currentPetSprite.destroy();
-            this.currentPetSprite = null;
-        }
+   private displayPet(): void {
+    // 1. Nếu Pet đang hiển thị, hủy nó đi
+    if (this.currentPetSprite) {
+        this.currentPetSprite.destroy();
+        this.currentPetSprite = null;
+    }
 
-        let petKey: string | null = null;
+    let petKey: string | null = null;
+    let animationKey: string | null = null;
+    
+    // ✨ DÒNG KHẮC PHỤC CHÍNH: LẤY KEY PET ĐANG ĐƯỢC TRANG BỊ ✨
+    const equippedKey = this.currentEquippedPetKey;
+    
+    // ----------------------------------------------------
+    // ✨ LOGIC MỚI: CHỈ XÉT PET ĐANG ĐƯỢC TRANG BỊ ✨
+    if (equippedKey === 'damage_dps' && this.petOwned.damage_dps) {
+        petKey = 'pet_damage1';
+        animationKey = 'pet-damage-idle';
+    }
+    else if (equippedKey === 'hp_regen' && this.petOwned.hp_regen) {
+        petKey = 'pet_heal1';
+        animationKey = 'pet-heal-idle';
+    }
+    else if (equippedKey === 'coin_collect' && this.petOwned.coin_collect) {
+        petKey = 'pet_coin';
+        animationKey = null;
+    }
 
-        // ✨ DÒNG KHẮC PHỤC: KHAI BÁO BIẾN ANIMATION KEY ✨
-        let animationKey: string | null = null;
-        // ----------------------------------------------------
-
-        // ✨ THAY ĐỔI LOGIC: ƯU TIÊN PET TẤN CÔNG (GIỐNG LOBBY.TS)
-        if (this.petOwned.damage_dps) { // <--- KIỂM TRA PET TẤN CÔNG TRƯỚC
-            petKey = 'pet_damage1';
-            animationKey = 'pet-damage-idle';
-        }
-        else if (this.petOwned.hp_regen) { // <--- KIỂM TRA PET HỒI MÁU SAU
-            petKey = 'pet_heal1';
-            animationKey = 'pet-heal-idle';
-        }
-
-        else if (this.petOwned.coin_collect) petKey = 'pet_coin';
-
-        // ... (BẠN CẦN TẢI CÁC TÊN ASSET NÀY TRONG preload())
-
-        if (petKey) {
-            // 2. Tạo Pet Sprite mới
-            this.currentPetSprite = this.physics.add.sprite(this.player.x - 50, this.player.y, petKey) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-            this.currentPetSprite.setOrigin(0.5, 1);
-            this.currentPetSprite.body.allowGravity = true;
-            this.physics.add.collider(this.currentPetSprite, this.ground); // Pet cũng đứng trên đất
-            this.currentPetSprite.setScale(0.8); // Giảm kích thước Pet
-
-            // 3. CHẠY HOẠT ẢNH NẾU CÓ
-            if (animationKey) {
-                // Lỗi cũ đã được xử lý bằng dấu (!)
-                this.currentPetSprite.play(animationKey!, true);
-            }
-
-            // Cố định Pet vào Player ban đầu (Logic theo dõi sẽ nằm trong update)
+    // [Tùy chọn] Logic cho lần đầu load scene (khi equippedKey là 'none')
+    if (equippedKey === 'none') {
+        if (this.petOwned.damage_dps) {
+            this.currentEquippedPetKey = 'damage_dps';
+            this.displayPet(); 
+            return;
+        } else if (this.petOwned.hp_regen) {
+            this.currentEquippedPetKey = 'hp_regen';
+            this.displayPet();
+            return;
         }
     }
+    // ----------------------------------------------------
+
+    if (petKey) {
+        // 2. Tạo Pet Sprite mới
+        this.currentPetSprite = this.physics.add.sprite(this.player.x - 50, this.player.y, petKey) as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+        this.currentPetSprite.setOrigin(0.5, 1);
+        this.currentPetSprite.body.allowGravity = true;
+        this.physics.add.collider(this.currentPetSprite, this.ground); // Pet cũng đứng trên đất
+        this.currentPetSprite.setScale(0.8); // Giảm kích thước Pet
+
+        // 3. CHẠY HOẠT ẢNH NẾU CÓ
+        if (animationKey) {
+            this.currentPetSprite.play(animationKey!, true);
+        }
+    }
+}
 
     private enableDialogueKeys(): void {
         // Chỉ bật nếu đang hội thoại
@@ -1215,4 +1249,38 @@ export default class LobbyScene extends Scene {
             this.uiTextLevelCoin.setText(`Level: ${this.playerLevel} | Xu: ${this.playerCoins}`);
         }
     }
+
+    // ✨ HÀM MỚI: Hiển thị thông báo tạm thời (dùng cho equipPet) ✨
+private showTemporaryMessage(message: string): void {
+    const camWidth = this.cameras.main.width;
+    const tempText = this.add.text(camWidth / 2, 50, message, {
+        fontSize: '24px',
+        color: '#ffcc00',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 }
+    })
+    .setOrigin(0.5, 0)
+    .setScrollFactor(0)
+    .setDepth(3000);
+
+    this.time.delayedCall(1500, () => tempText.destroy(), [], this);
+}
+
+// ✨ HÀM MỚI: Trang bị Pet đã sở hữu ✨
+private equipPet(petKey: string): void {
+    if (this.currentEquippedPetKey === petKey) {
+        this.showTemporaryMessage(`Pet ${petKey.replace('_', ' ')} đang được trang bị.`);
+        return;
+    }
+
+    this.currentEquippedPetKey = petKey;
+    this.displayPet(); // Cập nhật hình ảnh Pet trong Lobby
+    
+    // Yêu cầu làm mới Shop để thấy hiệu ứng Pet đang chọn
+    this.shopPanel?.destroy();
+    this.shopPanel = this.createShopPanel();
+    this.shopPanel.setVisible(true); // Hiển thị lại shop đã làm mới
+
+    this.showTemporaryMessage(`Đã trang bị Pet ${petKey.replace('_', ' ')}.`);
+}
 }
