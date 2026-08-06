@@ -1,7 +1,9 @@
 import { Scene } from "phaser";
 import GameScene from "./Game";
+import TouchControls from "../TouchControls";
 
 export default class LobbyScene extends Scene {
+    private touchControls!: TouchControls;
     // Nhân vật chính
     private player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -295,6 +297,10 @@ export default class LobbyScene extends Scene {
     }
 
     create(): void {
+        // 📱 Khởi tạo Touch Controls
+        this.touchControls = new TouchControls('game-container');
+        this.touchControls.setContext('lobby');
+
         const camWidth = this.cameras.main.width;
         const camHeight = this.cameras.main.height;
         // ✨ SỬA VỊ TRÍ: Đặt cố định ở góc trên bên trái (16px margin) ✨
@@ -529,8 +535,9 @@ export default class LobbyScene extends Scene {
 
         this.guideText.setText(guideContent);
 
-        // Đợi phím Enter được nhấn để đóng hướng dẫn
+        // Đợi phím Enter hoặc tap để đóng hướng dẫn
         this.input.keyboard!.once('keydown-ENTER', this.hideGameGuide, this);
+        this.input.once('pointerdown', this.hideGameGuide, this);
     }
 
     // ✨ HÀM ẨN HƯỚNG DẪN CHƠI ✨
@@ -568,7 +575,7 @@ export default class LobbyScene extends Scene {
         // ====================================================================
         // ✨ BƯỚC 1: XỬ LÝ PHÍM TƯƠNG TÁC [X] (SỬ DỤNG nearestNPC) ✨
         // ====================================================================
-        if (Phaser.Input.Keyboard.JustDown(this.interactionKey)) {
+        if (Phaser.Input.Keyboard.JustDown(this.interactionKey) || this.touchControls.justPressed('interact')) {
             const nearestNPC = (this as any).nearestNPC;
 
             if (nearestNPC === this.npcQuest && !this.isInDialogue) {
@@ -587,12 +594,27 @@ export default class LobbyScene extends Scene {
         // ✨ BƯỚC 2: LOGIC CHẶN INPUT & MOVEMENT (THEO TRẠNG THÁI) ✨
         // ====================================================================
         if (this.isInDialogue || this.isShowingGuide || this.isShopOpen || this.isQuizActive) {
+            // 📱 Xử lý touch cho Quiz (A/B) và SPACE khi đang trong trạng thái chặn
+            if (this.isQuizActive) {
+                if (this.touchControls.justPressed('answerA')) {
+                    this.handleQuizAnswer('A');
+                } else if (this.touchControls.justPressed('answerB')) {
+                    this.handleQuizAnswer('B');
+                }
+            }
+            // 📱 Nút SPACE ảo: xử lý dialogue/quiz continuation
+            if (this.touchControls.justPressed('space')) {
+                // Mô phỏng phím SPACE cho các listener đang chờ
+                this.input.keyboard!.emit('keydown-SPACE');
+            }
+
             // Dừng Player và Pet
             this.player.body.setVelocityX(0);
             this.player.anims.stop();
             if (this.currentPetSprite) {
                 this.currentPetSprite.body.velocity.x = 0;
             }
+            this.touchControls.resetFrameState();
             return; // CHẶN MỌI THỨ Ở DƯỚI
         }
         // ------------------------------------
@@ -616,6 +638,9 @@ export default class LobbyScene extends Scene {
         }
 
         this.handlePlayerMovement();
+
+        // 📱 Reset trạng thái touch ở cuối frame
+        this.touchControls.resetFrameState();
     }
 
     // Hàm xử lý di chuyển nhân vật chính (Giữ nguyên)
@@ -626,13 +651,18 @@ export default class LobbyScene extends Scene {
 
         const isOnGround = this.player.body.blocked.down;
 
-        if (this.cursors.left.isDown) {
+        // 📱 Hỗ trợ cả keyboard và touch controls
+        const moveLeft = this.cursors.left.isDown || this.touchControls.isDown('left');
+        const moveRight = this.cursors.right.isDown || this.touchControls.isDown('right');
+        const doJump = (Phaser.Input.Keyboard.JustDown(this.jumpKey) || this.touchControls.justPressed('jump'));
+
+        if (moveLeft) {
             this.player.body.setVelocityX(-speed);
             this.player.setFlipX(true);
             if (isOnGround) {
                 this.player.play("leloi-walk-left", true);
             }
-        } else if (this.cursors.right.isDown) {
+        } else if (moveRight) {
             this.player.body.setVelocityX(speed);
             this.player.setFlipX(false);
             if (isOnGround) {
@@ -646,8 +676,8 @@ export default class LobbyScene extends Scene {
             }
         }
 
-        // Dùng phím SPACE (this.jumpKey) để nhảy
-        if (Phaser.Input.Keyboard.JustDown(this.jumpKey) && isOnGround) {
+        // Dùng phím SPACE (this.jumpKey) hoặc nút ảo để nhảy
+        if (doJump && isOnGround) {
             this.player.setVelocityY(-400);
         }
 
@@ -743,6 +773,7 @@ export default class LobbyScene extends Scene {
         };
 
         // Truyền data qua hàm start()
+        this.touchControls.destroy(); // 📱 Dọn dẹp touch controls trước khi chuyển scene
         this.scene.start("Game", gameDataToPass);
     }
 
@@ -1134,7 +1165,8 @@ export default class LobbyScene extends Scene {
         this.player.anims.stop();
         this.interactionPrompt.setVisible(false)
 
-
+        // 📱 Chuyển touch context sang quiz để hiện nút A/B
+        this.touchControls.setContext('quiz');
 
         // Ẩn tên NPC khác và tên Quiz NPC
         this.dinhLeNameText.setVisible(false);
@@ -1199,6 +1231,9 @@ export default class LobbyScene extends Scene {
         // Chuyển sang câu hỏi tiếp theo sau khi người chơi nhấn SPACE
         this.input.keyboard!.once('keydown-SPACE', this.continueQuiz, this);
 
+        // 📱 Hỗ trợ touch: nhấn nút SPACE ảo để tiếp tục quiz
+        // (Sẽ được xử lý bởi update() loop thông qua touchControls)
+
         // Cập nhật hiển thị Xu
         this.updateCoinDisplay();
     }
@@ -1223,6 +1258,9 @@ export default class LobbyScene extends Scene {
         this.dialogueBox.setVisible(false);
         this.dialogueText.setVisible(false);
         this.promptText.setVisible(false);
+
+        // 📱 Quay lại touch context lobby
+        this.touchControls.setContext('lobby');
 
         // Xóa tất cả listener liên quan đến Quiz
         this.input.keyboard!.off('keydown-A', this.handleQuizAnswer, this);

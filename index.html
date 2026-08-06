@@ -2,11 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
     <title>Hành Trình Anh Hùng Việt</title>
     <style>
-      body { margin: 0; background: #111; color: #fff; }
-      #game-container { width: 100vw; height: 100vh; overflow: hidden; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #111; color: #fff; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+      #game-container { width: 100vw; height: 100vh; overflow: hidden; touch-action: none; position: relative; }
+      #game-container canvas { touch-action: none; }
     </style>
   </head>
   <body>

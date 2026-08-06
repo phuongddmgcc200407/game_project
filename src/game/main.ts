@@ -10,6 +10,9 @@ export default function StartGame(parentId: string) {
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     parent: parentId,
+    input: {
+      activePointers: 3, // Hỗ trợ multi-touch (di chuyển + bắn cùng lúc)
+    },
     physics: {
       default: 'arcade',
       arcade: {
@@ -18,7 +21,7 @@ export default function StartGame(parentId: string) {
       },
     },
     scale: {
-        mode: Phaser.Scale.ENVELOP,
+        mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: 1900,
         height: 1000,

@@ -1,5 +1,6 @@
 // GameScene.ts
 import { Scene } from "phaser";
+import TouchControls from "../TouchControls";
 
 
 // Khai báo kiểu dữ liệu cho Enemy/Boss (mở rộng từ SpriteWithDynamicBody)
@@ -33,6 +34,7 @@ interface Coin extends Phaser.Types.Physics.Arcade.SpriteWithDynamicBody {
 
 
 export default class GameScene extends Scene {
+  private touchControls!: TouchControls;
   private equippedPetKey: string = 'none'; // Biến mới để lưu Pet đang được chọn
 
   // ✨ BIẾN MỚI CHO QUẢNG CÁO/HỒI SINH ✨
@@ -278,6 +280,9 @@ export default class GameScene extends Scene {
   }
 
   create(): void {
+    // 📱 Khởi tạo Touch Controls
+    this.touchControls = new TouchControls('game-container');
+    this.touchControls.setContext('game');
 
     // THÊM: Gán phím C cho bảng chỉ số
     this.statsKey = this.input.keyboard!.addKey(
@@ -745,6 +750,8 @@ export default class GameScene extends Scene {
     this.currentLineIndex = 0;
     this.dialogueText.setText(this.dialogueLines[this.currentLineIndex]);
     this.input.keyboard!.on("keydown-SPACE", this.nextDialogueLine, this);
+    // 📱 Hỗ trợ tap để next dialogue
+    this.input.on('pointerdown', this.nextDialogueLine, this);
   }
 
   private nextDialogueLine(): void {
@@ -763,6 +770,7 @@ export default class GameScene extends Scene {
     this.dialogueBox.setVisible(false);
     this.dialogueText.setVisible(false);
     this.input.keyboard!.off("keydown-SPACE", this.nextDialogueLine, this);
+    this.input.off('pointerdown', this.nextDialogueLine, this);
   }
 
   // --- Combat/Interaction Logic ---
@@ -1024,6 +1032,7 @@ export default class GameScene extends Scene {
       // Khai báo listener cho phím tắt Y/N
       this.input.keyboard!.once('keydown-Y', () => this.handleAdRespawn(true), this);
       this.input.keyboard!.once('keydown-N', () => this.handleAdRespawn(false), this);
+      // 📱 Hỗ trợ nút chạm qua respawnPanel (đã có pointerdown handler trên yesBtn/noBtn)
 
       // ❌ XÓA HẾT PHẦN HIỂN THỊ "GAME OVER" VÀ SPACE NẾU CÓ ❌
 
@@ -1283,23 +1292,25 @@ export default class GameScene extends Scene {
   update(): void {
     // --- 1. KIỂM TRA TRẠNG THÁI CHẶN (BLOCKING STATES) ---
     if (this.isGameOver) {
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!)) window.location.reload();
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!) || this.touchControls.justPressed('space')) window.location.reload();
+      this.touchControls.resetFrameState();
       return;
     }
 
     // ✨ XỬ LÝ PHÍM ESC (PAUSE) ✨
-    if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
+    if (Phaser.Input.Keyboard.JustDown(this.escKey) || this.touchControls.justPressed('pause')) {
       this.togglePause(!this.isPaused);
     }
 
     // Nếu game đang pause, KHÔNG làm gì cả
     if (this.isPaused) {
+      this.touchControls.resetFrameState();
       return;
     }
     // ------------------------------------
 
     // ✨ LOGIC BẬT/TẮT BẢNG CHỈ SỐ (Nút C) ✨
-    if (Phaser.Input.Keyboard.JustDown(this.statsKey)) {
+    if (Phaser.Input.Keyboard.JustDown(this.statsKey) || this.touchControls.justPressed('stats')) {
       this.isStatsPanelVisible = !this.isStatsPanelVisible;
       this.statsPanel.setVisible(this.isStatsPanelVisible);
 
@@ -1311,6 +1322,7 @@ export default class GameScene extends Scene {
 
     // Thoát khỏi update nếu bảng chỉ số đang mở (để người chơi không di chuyển)
     if (this.isStatsPanelVisible) {
+      this.touchControls.resetFrameState();
       return;
     }
 
@@ -1385,24 +1397,37 @@ export default class GameScene extends Scene {
 
     // ✨ LỖI ĐÃ SỬA: BỎ DÒNG 'return' (Hoặc di chuyển nó ra khỏi đây nếu cần)
     if (this.isLevelComplete) {
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!)) {
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!) || this.touchControls.justPressed('space')) {
         this.startNextLevel();
       }
+      this.touchControls.resetFrameState();
       return; // GIỮ LẠI DÒNG NÀY ĐỂ NGĂN CHẶN DI CHUYỂN KHI MÀN HÌNH CHUYỂN VÒNG
     }
 
     // ✨ KIỂM TRA ĐANG NÓI CHUYỆN
-    if (this.isInDialogue) return;
+    if (this.isInDialogue) {
+      // 📱 Hỗ trợ touch SPACE cho dialogue
+      if (this.touchControls.justPressed('space')) {
+        this.nextDialogueLine();
+      }
+      this.touchControls.resetFrameState();
+      return;
+    }
 
     // --- Player Movement (Giữ nguyên) ---
 
     // KIỂM TRA GAME OVER, DIALOGUE, và LEVEL COMPLETE TRƯỚC PHẦN NÀY
 
-    if (this.cursors.left?.isDown) {
+    // 📱 Hỗ trợ cả keyboard và touch controls cho di chuyển
+    const moveLeft = this.cursors.left?.isDown || this.touchControls.isDown('left');
+    const moveRight = this.cursors.right?.isDown || this.touchControls.isDown('right');
+    const doJump = this.cursors.up?.isDown || this.cursors.space?.isDown || this.touchControls.isDown('jump');
+
+    if (moveLeft) {
       this.player.setVelocityX(-460);
       this.player.setFlipX(true);
       this.player.play("leloi-walk-left", true);
-    } else if (this.cursors.right?.isDown) {
+    } else if (moveRight) {
       this.player.setVelocityX(460);
       this.player.setFlipX(false);
       this.player.play("leloi-walk-right", true);
@@ -1411,12 +1436,12 @@ export default class GameScene extends Scene {
       this.player.anims.stop();
     }
 
-    if ((this.cursors.up?.isDown || this.cursors.space?.isDown) && this.player.body.blocked.down) {
+    if (doJump && this.player.body.blocked.down) {
       this.player.setVelocityY(-400);
     }
 
-    // --- Logic SẠC CUNG THƯỜNG (A) ---
-    const isAttacking = this.attackKey.isDown;
+    // --- Logic SẠC CUNG THƯỜNG (A) --- 📱 Hỗ trợ touch
+    const isAttacking = this.attackKey.isDown || this.touchControls.isDown('attack');
     if (isAttacking) {
       if (!this.isCharging) {
         this.isCharging = true;
@@ -1428,7 +1453,8 @@ export default class GameScene extends Scene {
       this.updateChargeAnimation(this.chargePower);
     }
 
-    if (Phaser.Input.Keyboard.JustUp(this.attackKey)) {
+    const attackReleased = Phaser.Input.Keyboard.JustUp(this.attackKey) || this.touchControls.justReleased('attack');
+    if (attackReleased) {
       if (this.isCharging && this.chargePower >= 30) {
         this.shootArrow(this.chargePower);
       }
@@ -1445,7 +1471,9 @@ export default class GameScene extends Scene {
     //     const isUltimateCharging = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging && canUseUltimate; 
 
     // PHẢI KIỂM TRA CẤP ĐỘ (canUnlockUltimate) NGAY Ở ĐÂY
-    const isTryingToCharge = this.ultimateKey.isDown && this.ultimateCooldown === 0 && !this.isCharging;
+    // 📱 Hỗ trợ touch cho Ultimate
+    const isUltKeyDown = this.ultimateKey.isDown || this.touchControls.isDown('ultimate');
+    const isTryingToCharge = isUltKeyDown && this.ultimateCooldown === 0 && !this.isCharging;
 
     if (isTryingToCharge && canUnlockUltimate && canUseUltimate) { // ✨ DÙNG isTryingToCharge, canUnlockUltimate VÀ canUseUltimate
       if (!this.isUltimateCharging) {
@@ -1457,15 +1485,15 @@ export default class GameScene extends Scene {
       // ÁP DỤNG HOẠT ẢNH SẠC CHO NÚT S
       this.updateChargeAnimation(this.ultimatePower);
 
-    } else if (this.ultimateKey.isDown && !canUnlockUltimate) {
+    } else if (isUltKeyDown && !canUnlockUltimate) {
       // Báo hiệu chưa mở khóa (ví dụ: nháy màu xanh dương)
       this.player.setTint(0x00aaff);
       this.showNotification("Bạn cần đạt cấp 2 để sử dụng hỏa tiễn!");
-    } else if (this.ultimateKey.isDown && !canUseUltimate) {
+    } else if (isUltKeyDown && !canUseUltimate) {
       // Hiệu ứng báo không đủ mana (Chỉ cần set tint đỏ/nhấp nháy)
       this.player.setTint(0xcc0000);
       this.showNotification("Không đủ Mana!");
-    } else if (this.isUltimateCharging && !this.ultimateKey.isDown) { // Logic khi nhả nút S (Chỉ khi đang sạc)
+    } else if (this.isUltimateCharging && !isUltKeyDown) { // Logic khi nhả nút S (Chỉ khi đang sạc)
       // NHẢ NÚT S
       if (this.ultimatePower >= 50) { // Yêu cầu sạc ít nhất 50%
         this.fireUltimateAttack();
@@ -1488,7 +1516,8 @@ export default class GameScene extends Scene {
     // Kích hoạt chiêu Triệu hồi lính (Nút D)
     const canSummonSoldier = this.playerLevel >= 3; // ✨ ĐIỀU KIỆN CẤP ĐỘ 5 ✨
 
-    if (Phaser.Input.Keyboard.JustDown(this.soldierKey) && !this.isCharging && !this.isUltimateCharging) {
+    // 📱 Hỗ trợ touch cho Soldier summon
+    if ((Phaser.Input.Keyboard.JustDown(this.soldierKey) || this.touchControls.justPressed('soldier')) && !this.isCharging && !this.isUltimateCharging) {
       if (canSummonSoldier) {
         this.summonSoldier();
       } else {
@@ -1626,6 +1655,9 @@ export default class GameScene extends Scene {
       }
     });
     // ----------------------------------------------------------------------------------
+
+    // 📱 Reset trạng thái touch ở cuối frame
+    this.touchControls.resetFrameState();
   }
 
   // Định nghĩa hàm triệu hồi lính (SỬ DỤNG XU THAY VÌ MANA)
@@ -1984,6 +2016,7 @@ export default class GameScene extends Scene {
     };
 
     // Dừng scene hiện tại và khởi động scene Lobby, truyền dữ liệu
+    this.touchControls.destroy(); // 📱 Dọn dẹp touch controls
     this.scene.stop('GameScene');
     this.scene.start('Lobby', saveData); // Khởi động LobbyScene và truyền saveData
   }
@@ -1991,6 +2024,7 @@ export default class GameScene extends Scene {
   // ✨ HÀM CHUYỂN VỀ MENU CHÍNH ✨
   private goToMainMenu(): void {
     this.togglePause(false);
+    this.touchControls.destroy(); // 📱 Dọn dẹp touch controls
     this.scene.stop('GameScene');
     this.scene.start('MainMenu'); // Quay về Menu chính
   }
