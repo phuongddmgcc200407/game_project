@@ -20,18 +20,6 @@
         touch-action: none; 
         position: relative; 
       }
-    </style>
-    <script>
-      // Chống zoom triệt để trên Safari / iOS
-      document.addEventListener('gesturestart', function(e) {
-        e.preventDefault();
-      });
-      document.addEventListener('dblclick', function(e) {
-        e.preventDefault();
-      }, { passive: false });
-    </script>
-  </head>
-  <body>
       #game-container canvas { 
         touch-action: none; 
         display: block; 
@@ -61,6 +49,15 @@
         }
       }
     </style>
+    <script>
+      // Chống zoom triệt để trên Safari / iOS
+      document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+      });
+      document.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+      }, { passive: false });
+    </script>
   </head>
   <body>
     <div id="rotate-prompt">
