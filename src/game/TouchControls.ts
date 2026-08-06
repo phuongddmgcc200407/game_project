@@ -9,7 +9,7 @@ export type TouchButtonId =
   | 'left' | 'right' | 'jump'
   | 'attack' | 'ultimate' | 'soldier'
   | 'interact' | 'stats' | 'pause'
-  | 'answerA' | 'answerB' | 'space';
+  | 'answerA' | 'answerB';
 
 type ButtonState = {
   isDown: boolean;
@@ -121,20 +121,7 @@ export default class TouchControls {
       border-color: rgba(100, 100, 255, 0.5);
     `);
 
-    // ========================================
-    // MIDDLE BOTTOM BUTTON (SPACE)
-    // ========================================
-    const spaceGroup = this.createGroup('space-group', `
-      position: absolute;
-      bottom: max(20px, env(safe-area-inset-bottom));
-      left: 50%;
-      transform: translateX(-50%);
-    `);
-    this.createButton('space', 'SPACE', spaceGroup, `
-      width: 130px; height: 48px; font-size: 14px;
-      background: rgba(100, 100, 100, 0.5);
-      border-color: rgba(150, 150, 150, 0.4);
-    `);
+    // (Đã xóa nút SPACE theo yêu cầu)
 
     // ========================================
     // TOP-RIGHT BUTTONS (nhỏ, góc trên phải)
@@ -220,7 +207,7 @@ export default class TouchControls {
     `;
 
     // Giữ hình chữ nhật bo tròn cho các nút không phải hình tròn
-    if (extraStyle.includes('width: 65px') || id === 'space' || id === 'answerA' || id === 'answerB') {
+    if (extraStyle.includes('width: 65px') || id === 'answerA' || id === 'answerB') {
       btn.style.borderRadius = '14px';
     }
 
@@ -326,26 +313,22 @@ export default class TouchControls {
       case 'lobby':
         this.showGroup('dpad');
         this.showGroup('actions');
-        this.showGroup('space-group');
         this.showButton('left');
         this.showButton('right');
         this.showButton('jump');
         this.showButton('interact');
-        this.showButton('space');
         break;
 
       case 'game':
         this.showGroup('dpad');
         this.showGroup('actions');
         this.showGroup('top-right');
-        this.showGroup('space-group');
         this.showButton('left');
         this.showButton('right');
         this.showButton('jump');
         this.showButton('attack');
         this.showButton('ultimate');
         this.showButton('soldier');
-        this.showButton('space');
         this.showButton('stats');
         this.showButton('pause');
         break;
@@ -354,18 +337,15 @@ export default class TouchControls {
         this.showGroup('dpad');
         this.showGroup('actions');
         this.showGroup('quiz');
-        this.showGroup('space-group');
         this.showButton('left');
         this.showButton('right');
         this.showButton('jump');
-        this.showButton('space');
         this.showButton('answerA');
         this.showButton('answerB');
         break;
 
       case 'mainmenu':
-        this.showGroup('space-group');
-        this.showButton('space');
+        // Không hiện gì, tap màn hình để start
         break;
 
       case 'none':

@@ -594,18 +594,13 @@ export default class LobbyScene extends Scene {
         // ✨ BƯỚC 2: LOGIC CHẶN INPUT & MOVEMENT (THEO TRẠNG THÁI) ✨
         // ====================================================================
         if (this.isInDialogue || this.isShowingGuide || this.isShopOpen || this.isQuizActive) {
-            // 📱 Xử lý touch cho Quiz (A/B) và SPACE khi đang trong trạng thái chặn
+            // 📱 Xử lý touch cho Quiz (A/B) khi đang trong trạng thái chặn
             if (this.isQuizActive) {
                 if (this.touchControls.justPressed('answerA')) {
                     this.handleQuizAnswer('A');
                 } else if (this.touchControls.justPressed('answerB')) {
                     this.handleQuizAnswer('B');
                 }
-            }
-            // 📱 Nút SPACE ảo: xử lý dialogue/quiz continuation
-            if (this.touchControls.justPressed('space')) {
-                // Mô phỏng phím SPACE cho các listener đang chờ
-                this.input.keyboard!.emit('keydown-SPACE');
             }
 
             // Dừng Player và Pet
@@ -1151,10 +1146,11 @@ export default class LobbyScene extends Scene {
             this.promptText.setVisible(true);
 
             this.dialogueText.setText("Sử gia: Bạn đã hoàn thành tất cả câu hỏi lịch sử!");
-            this.promptText.setText("[SPACE] để tiếp tục du hành.");
+            this.promptText.setText("[SPACE] hoặc chạm để tiếp tục du hành.");
 
             // Dùng `once` với phím SPACE để đóng hộp thoại chung
             this.input.keyboard!.once('keydown-SPACE', this.endDialogue, this);
+            this.input.once('pointerdown', this.endDialogue, this);
             return;
         }
 
@@ -1228,11 +1224,9 @@ export default class LobbyScene extends Scene {
         // Tăng index câu hỏi
         this.currentQuestionIndex++;
 
-        // Chuyển sang câu hỏi tiếp theo sau khi người chơi nhấn SPACE
+        // Chuyển sang câu hỏi tiếp theo sau khi người chơi nhấn SPACE hoặc chạm
         this.input.keyboard!.once('keydown-SPACE', this.continueQuiz, this);
-
-        // 📱 Hỗ trợ touch: nhấn nút SPACE ảo để tiếp tục quiz
-        // (Sẽ được xử lý bởi update() loop thông qua touchControls)
+        this.input.once('pointerdown', this.continueQuiz, this);
 
         // Cập nhật hiển thị Xu
         this.updateCoinDisplay();
@@ -1266,6 +1260,7 @@ export default class LobbyScene extends Scene {
         this.input.keyboard!.off('keydown-A', this.handleQuizAnswer, this);
         this.input.keyboard!.off('keydown-B', this.handleQuizAnswer, this);
         this.input.keyboard!.off('keydown-SPACE', this.continueQuiz, this);
+        this.input.off('pointerdown', this.continueQuiz, this);
         this.input.keyboard!.off('keydown-X', this.endQuiz, this); // Dọn dẹp listener cuối cùng
 
         // Hiển thị lại tên NPC

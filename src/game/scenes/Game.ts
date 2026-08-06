@@ -1292,7 +1292,7 @@ export default class GameScene extends Scene {
   update(): void {
     // --- 1. KIỂM TRA TRẠNG THÁI CHẶN (BLOCKING STATES) ---
     if (this.isGameOver) {
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!) || this.touchControls.justPressed('space')) window.location.reload();
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!) || this.input.activePointer.leftButtonDown()) window.location.reload();
       this.touchControls.resetFrameState();
       return;
     }
@@ -1397,7 +1397,7 @@ export default class GameScene extends Scene {
 
     // ✨ LỖI ĐÃ SỬA: BỎ DÒNG 'return' (Hoặc di chuyển nó ra khỏi đây nếu cần)
     if (this.isLevelComplete) {
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!) || this.touchControls.justPressed('space')) {
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.space!) || this.input.activePointer.leftButtonDown()) {
         this.startNextLevel();
       }
       this.touchControls.resetFrameState();
@@ -1406,10 +1406,6 @@ export default class GameScene extends Scene {
 
     // ✨ KIỂM TRA ĐANG NÓI CHUYỆN
     if (this.isInDialogue) {
-      // 📱 Hỗ trợ touch SPACE cho dialogue
-      if (this.touchControls.justPressed('space')) {
-        this.nextDialogueLine();
-      }
       this.touchControls.resetFrameState();
       return;
     }
