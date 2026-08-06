@@ -268,6 +268,16 @@ export default class GameScene extends Scene {
     this.touchControls = new TouchControls('game-container');
     this.touchControls.setContext('game');
 
+    // ✨ Đóng bảng chỉ số khi chạm bất kỳ đâu trên màn hình game ✨
+    this.input.on('pointerdown', () => {
+      if (this.isStatsPanelVisible) {
+        this.isStatsPanelVisible = false;
+        this.statsPanel.setVisible(false);
+        this.physics.resume();
+        this.anims.resumeAll();
+      }
+    });
+
     // THÊM: Gán phím C cho bảng chỉ số
     this.statsKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.C
@@ -1215,6 +1225,11 @@ export default class GameScene extends Scene {
       // Cập nhật ngay khi mở
       if (this.isStatsPanelVisible) {
         this.updateStatsPanel();
+        this.physics.pause();
+        this.anims.pauseAll();
+      } else {
+        this.physics.resume();
+        this.anims.resumeAll();
       }
     }
 
@@ -1784,15 +1799,10 @@ export default class GameScene extends Scene {
     const soldierStatus = this.add.text(-150, startY + lineHeight * 8, "Triệu hồi (D): 3", { fontSize: "16px", color: "#00ff00" }).setOrigin(0, 0.5);
 
     // Nút đóng (X)
-    const closeBtn = this.add.text(panelWidth / 2 - 25, -panelHeight / 2 + 25, "❌", {
-      fontSize: "20px",
-      padding: { x: 5, y: 5 }
-    }).setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => {
-        this.isStatsPanelVisible = false;
-        this.statsPanel.setVisible(false);
-      });
+    const closeBtn = this.add.text(0, panelHeight / 2 - 20, "( Chạm bất kỳ đâu để đóng )", {
+      fontSize: "14px",
+      color: "#aaaaaa"
+    }).setOrigin(0.5);
 
     // Tạo Container
     const panel = this.add.container(camWidth / 2, camHeight / 2, [
