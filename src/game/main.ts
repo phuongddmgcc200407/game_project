@@ -29,5 +29,23 @@ export default function StartGame(parentId: string) {
     scene: [Boot, Preloader, MainMenu, LobbyScene, GameScene],
   };
 
-  return new Phaser.Game(config);
+  const game = new Phaser.Game(config);
+
+  // Khắc phục lỗi sai kích thước trên mobile browser khi load màn hình ngang
+  const refreshScale = () => {
+    if (game && game.scale) {
+      game.scale.refresh();
+    }
+  };
+
+  window.addEventListener('resize', () => {
+    setTimeout(refreshScale, 100);
+    setTimeout(refreshScale, 500);
+  });
+
+  // Tự động refresh sau khi trang vừa load xong
+  setTimeout(refreshScale, 500);
+  setTimeout(refreshScale, 1500);
+
+  return game;
 }
