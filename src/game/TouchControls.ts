@@ -86,42 +86,31 @@ export default class TouchControls {
     this.createButton('jump', '⬆', actions, `
       position: absolute; right: 0; top: 50%; transform: translateY(-50%);
       width: ${btnSize}; height: ${btnSize};
-      background: rgba(255, 255, 255, 0.25);
     `);
 
     // Attack (A) - Dưới cùng
     this.createButton('attack', '⚔A', actions, `
       position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
       width: ${btnSize}; height: ${btnSize};
-      background: rgba(200, 50, 50, 0.6);
-      border-color: rgba(255, 100, 100, 0.5);
     `);
 
     // Ultimate (S) - Trên cùng
     this.createButton('ultimate', '🔥S', actions, `
       position: absolute; top: 0; left: 50%; transform: translateX(-50%);
       width: ${btnSize}; height: ${btnSize};
-      background: rgba(200, 130, 0, 0.6);
-      border-color: rgba(255, 180, 50, 0.5);
     `);
 
     // Soldier (D) - Bên Trái
     this.createButton('soldier', '🛡D', actions, `
       position: absolute; left: 0; top: 50%; transform: translateY(-50%);
       width: ${btnSize}; height: ${btnSize};
-      background: rgba(50, 150, 50, 0.6);
-      border-color: rgba(100, 200, 100, 0.5);
     `);
 
     // Interact (X) - Đặt cùng vị trí với Attack (A) vì dùng trong Lobby
     this.createButton('interact', '✋X', actions, `
       position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
       width: ${btnSize}; height: ${btnSize};
-      background: rgba(60, 60, 200, 0.6);
-      border-color: rgba(100, 100, 255, 0.5);
     `);
-
-    // (Đã xóa nút SPACE theo yêu cầu)
 
     // ========================================
     // TOP-RIGHT BUTTONS (nhỏ, góc trên phải)
@@ -136,14 +125,10 @@ export default class TouchControls {
     this.createButton('stats', '📊', topRight, `
       position: relative;
       width: 44px; height: 44px; font-size: 16px;
-      background: rgba(80, 80, 80, 0.5);
-      border-color: rgba(150, 150, 150, 0.3);
     `);
     this.createButton('pause', '⏸', topRight, `
       position: relative;
       width: 44px; height: 44px; font-size: 16px;
-      background: rgba(80, 80, 80, 0.5);
-      border-color: rgba(150, 150, 150, 0.3);
     `);
 
     // ========================================
@@ -161,14 +146,10 @@ export default class TouchControls {
     this.createButton('answerA', 'A', quizGroup, `
       position: relative;
       width: 70px; height: 60px; font-size: 24px; font-weight: bold;
-      background: rgba(0, 110, 190, 0.7);
-      border-color: rgba(80, 170, 255, 0.6);
     `);
     this.createButton('answerB', 'B', quizGroup, `
       position: relative;
       width: 70px; height: 60px; font-size: 24px; font-weight: bold;
-      background: rgba(190, 110, 0, 0.7);
-      border-color: rgba(255, 180, 60, 0.6);
     `);
   }
 
