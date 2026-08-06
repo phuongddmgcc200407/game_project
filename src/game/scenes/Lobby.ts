@@ -1248,13 +1248,14 @@ export default class LobbyScene extends Scene {
 
         // Hiển thị thông báo kết quả
         this.dialogueText.setText(`[Sử gia]: ${message}`);
-        this.promptText.setVisible(false);
+        this.promptText.setText("Tự động chuyển câu hỏi sau giây lát...");
+        this.promptText.setVisible(true);
 
         // Tăng index câu hỏi
         this.currentQuestionIndex++;
 
-        // Chuyển sang câu hỏi tiếp theo sau 1.75s
-        this.time.delayedCall(1750, () => {
+        // Chuyển sang câu hỏi tiếp theo sau 1.5s
+        this.time.delayedCall(1500, () => {
             if (this.isQuizActive) {
                 this.continueQuiz();
             }
