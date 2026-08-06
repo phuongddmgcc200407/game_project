@@ -151,24 +151,8 @@ export default class GameScene extends Scene {
   // -----------------
 
   // --- NPC ---
-  private npc!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-  private dialogueBox!: Phaser.GameObjects.Rectangle;
-  private dialogueText!: Phaser.GameObjects.Text;
-  private dialogueLines: string[] = [
-    "Chào ngươi, ta là Nguyễn Trãi – mưu sĩ của nghĩa quân Lam Sơn.",
-    "Phía trước là đồn quân Minh, chúng đang chiếm giữ kho lương.",
-    "Nhiệm vụ của ngươi là tiêu diệt bọn chúng, mở đường cho nghĩa quân!",
-    "Hãy cẩn thận, chiến trường này đầy hiểm nguy...",
-    "Giờ thì lên đường đi, Lê Lợi!",
-  ];
-  private currentLineIndex: number = 0;
-  private isInDialogue: boolean = false;
-  private hasTalkedToNpc: boolean = false;
-
+  // (Removed Nguyen Trai)
   // Khai báo lại các hàm private để TypeScript/IDE nhận diện (Giữ cho TypeScript nhận diện)
-  // private startDialogue(): void;
-  // private nextDialogueLine(): void;
-  // private endDialogue(): void;
   // private updateChargeAnimation(power: number): void;
   // private applyDamage(projectile: any, target: any, damage: number, knockback: number): void;
   // private handleArrowHit(arrow: any, target: any): void;
@@ -383,57 +367,7 @@ export default class GameScene extends Scene {
     });
     // ------------------------------------
 
-    // ✨ TẠO HOẠT ẢNH CHO NGUYỄN TRÃI
-    this.anims.create({
-      key: "nguyentrai-idle",
-      frames: [
-        { key: "nt1" }, { key: "nt2" }, { key: "nt3" },
-        { key: "nt4" }, { key: "nt5" },
-      ],
-      frameRate: 1, // Tốc độ hoạt ảnh đứng yên
-      repeat: -1,
-    });
-
-    // --- NPC --- (Nguyễn Trãi)
-    this.npc = this.physics.add.sprite(400, 775, "nt1"); // ✨ SỬ DỤNG FRAME NT1 BAN ĐẦU
-    this.npc.setImmovable(true);
-    this.npc.body.allowGravity = false;
-    this.physics.add.collider(this.npc, this.ground);
-
-    // ✨ ÁP DỤNG HOẠT ẢNH NGUYỄN TRÃI
-    this.npc.play("nguyentrai-idle", true);
-
-    // --- Dialogue UI (Giữ nguyên) ---
-    this.dialogueBox = this.add
-      .rectangle(
-        this.cameras.main.width / 2,
-        this.cameras.main.height - 100,
-        700,
-        120,
-        0x000000,
-        0.6
-      )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setVisible(false);
-
-    this.dialogueText = this.add
-      .text(
-        this.cameras.main.width / 2 - 320,
-        this.cameras.main.height - 150,
-        "",
-        { fontSize: "20px", color: "#ffffff", wordWrap: { width: 640 } }
-      )
-      .setScrollFactor(0)
-      .setVisible(false);
-
-    this.physics.add.overlap(
-      this.player,
-      this.npc,
-      this.startDialogue,
-      undefined,
-      this
-    );
+    // --- (Removed Nguyen Trai NPC & Dialogue UI) ---
 
     // --- Animations (Giữ nguyên) ---
     this.anims.create({
@@ -735,42 +669,6 @@ export default class GameScene extends Scene {
         this.player.clearTint();
       }
     }
-  }
-
-  // --- Dialogue Logic (Giữ nguyên) ---
-
-  private startDialogue(): void {
-    if (this.isInDialogue || this.hasTalkedToNpc) return;
-    this.isInDialogue = true;
-    this.player.setVelocity(0);
-    this.player.anims.stop();
-
-    this.dialogueBox.setVisible(true);
-    this.dialogueText.setVisible(true);
-    this.currentLineIndex = 0;
-    this.dialogueText.setText(this.dialogueLines[this.currentLineIndex]);
-    this.input.keyboard!.on("keydown-SPACE", this.nextDialogueLine, this);
-    // 📱 Hỗ trợ tap để next dialogue
-    this.input.on('pointerdown', this.nextDialogueLine, this);
-  }
-
-  private nextDialogueLine(): void {
-    if (!this.isInDialogue) return;
-    this.currentLineIndex++;
-    if (this.currentLineIndex >= this.dialogueLines.length) {
-      this.endDialogue();
-      this.hasTalkedToNpc = true;
-    } else {
-      this.dialogueText.setText(this.dialogueLines[this.currentLineIndex]);
-    }
-  }
-
-  private endDialogue(): void {
-    this.isInDialogue = false;
-    this.dialogueBox.setVisible(false);
-    this.dialogueText.setVisible(false);
-    this.input.keyboard!.off("keydown-SPACE", this.nextDialogueLine, this);
-    this.input.off('pointerdown', this.nextDialogueLine, this);
   }
 
   // --- Combat/Interaction Logic ---
@@ -1402,12 +1300,6 @@ export default class GameScene extends Scene {
       }
       this.touchControls.resetFrameState();
       return; // GIỮ LẠI DÒNG NÀY ĐỂ NGĂN CHẶN DI CHUYỂN KHI MÀN HÌNH CHUYỂN VÒNG
-    }
-
-    // ✨ KIỂM TRA ĐANG NÓI CHUYỆN
-    if (this.isInDialogue) {
-      this.touchControls.resetFrameState();
-      return;
     }
 
     // --- Player Movement (Giữ nguyên) ---

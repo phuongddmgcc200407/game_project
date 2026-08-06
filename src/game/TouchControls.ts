@@ -213,18 +213,24 @@ export default class TouchControls {
     btn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      btn.setPointerCapture(e.pointerId);
+      try {
+        btn.setPointerCapture(e.pointerId);
+      } catch (err) {}
       state.isDown = true;
       state.justPressed = true;
       btn.style.transform = btn.style.transform.replace('scale(0.9)', '') + ' scale(0.9)';
-      btn.style.background = 'rgba(255, 255, 255, 0.25)';
+      btn.style.background = 'rgba(255, 255, 255, 0.15)';
       btn.style.boxShadow = 'inset 0 0 15px rgba(255, 255, 255, 0.4), 0 0 8px rgba(255, 255, 255, 0.2)';
     });
 
     btn.addEventListener('pointerup', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      btn.releasePointerCapture(e.pointerId);
+      try {
+        if (btn.hasPointerCapture(e.pointerId)) {
+          btn.releasePointerCapture(e.pointerId);
+        }
+      } catch (err) {}
       state.isDown = false;
       state.justReleased = true;
       btn.style.transform = btn.style.transform.replace(' scale(0.9)', '');
