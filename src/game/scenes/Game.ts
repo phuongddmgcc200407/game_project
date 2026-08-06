@@ -1783,6 +1783,17 @@ export default class GameScene extends Scene {
     const ultStatus = this.add.text(-150, startY + lineHeight * 7, "Hỏa tiễn (S): Cấp 2", { fontSize: "16px", color: "#00aaff" }).setOrigin(0, 0.5);
     const soldierStatus = this.add.text(-150, startY + lineHeight * 8, "Triệu hồi (D): 3", { fontSize: "16px", color: "#00ff00" }).setOrigin(0, 0.5);
 
+    // Nút đóng (X)
+    const closeBtn = this.add.text(panelWidth / 2 - 25, -panelHeight / 2 + 25, "❌", {
+      fontSize: "20px",
+      padding: { x: 5, y: 5 }
+    }).setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => {
+        this.isStatsPanelVisible = false;
+        this.statsPanel.setVisible(false);
+      });
+
     // Tạo Container
     const panel = this.add.container(camWidth / 2, camHeight / 2, [
       background,
@@ -1795,6 +1806,7 @@ export default class GameScene extends Scene {
       scoreText,
       ultStatus,
       soldierStatus,
+      closeBtn,
     ]);
 
     // Lưu các đối tượng Text vào data của Container để dễ dàng cập nhật
