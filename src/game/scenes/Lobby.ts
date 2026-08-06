@@ -141,6 +141,7 @@ export default class LobbyScene extends Scene {
     // Trạng thái game
     private isInDialogue: boolean = false;
     private hasTalkedToNpc: boolean = false;
+    private isShowingQuizResult: boolean = false; // ✨ Trạng thái khóa phím chờ kết quả
     private interactionKey!: Phaser.Input.Keyboard.Key;
     private jumpKey!: Phaser.Input.Keyboard.Key;
 
@@ -599,12 +600,14 @@ export default class LobbyScene extends Scene {
         if (this.isInDialogue || this.isShowingGuide || this.isShopOpen || this.isQuizActive) {
             // 📱 Xử lý touch cho Quiz (A/B) khi đang trong trạng thái chặn
             if (this.isQuizActive) {
-                if (this.touchControls.justPressed('answerA')) {
-                    this.handleQuizAnswer('A');
-                } else if (this.touchControls.justPressed('answerB')) {
-                    this.handleQuizAnswer('B');
-                } else if (this.touchControls.justPressed('interact')) { // Nút X (Quay lại)
+                if (this.touchControls.justPressed('interact')) { // Nút X (Quay lại)
                     this.endQuiz();
+                } else if (!this.isShowingQuizResult) {
+                    if (this.touchControls.justPressed('answerA')) {
+                        this.handleQuizAnswer('A');
+                    } else if (this.touchControls.justPressed('answerB')) {
+                        this.handleQuizAnswer('B');
+                    }
                 }
             }
 
@@ -1223,6 +1226,9 @@ export default class LobbyScene extends Scene {
 
     private handleQuizAnswer(answerKey: string): void {
         if (!this.isQuizActive || this.currentQuestionIndex >= this.quizQuestions.length) return;
+        if (this.isShowingQuizResult) return; // Bảo vệ 2 lớp chống spam
+
+        this.isShowingQuizResult = true;
 
         // const answerKey = event.originalEvent.key.toUpperCase(); // DÒNG NÀY ĐÃ BỊ XÓA ❌
         const questionData = this.quizQuestions[this.currentQuestionIndex];
@@ -1242,20 +1248,24 @@ export default class LobbyScene extends Scene {
 
         // Hiển thị thông báo kết quả
         this.dialogueText.setText(`[Sử gia]: ${message}`);
-        this.promptText.setText("[SPACE] để tiếp tục...");
+        this.promptText.setVisible(false);
 
         // Tăng index câu hỏi
         this.currentQuestionIndex++;
 
-        // Chuyển sang câu hỏi tiếp theo sau khi người chơi nhấn SPACE hoặc chạm
-        this.input.keyboard!.once('keydown-SPACE', this.continueQuiz, this);
-        this.input.once('pointerdown', this.continueQuiz, this);
+        // Chuyển sang câu hỏi tiếp theo sau 1.75s
+        this.time.delayedCall(1750, () => {
+            if (this.isQuizActive) {
+                this.continueQuiz();
+            }
+        }, [], this);
 
         // Cập nhật hiển thị Xu
         this.updateCoinDisplay();
     }
 
     private continueQuiz(): void {
+        this.isShowingQuizResult = false;
         // Bật lại listener đáp án (SỬA ĐỔI CÁCH BẬT)
         this.input.keyboard!.on('keydown-A', () => this.handleQuizAnswer('A'), this); // ✨ SỬA ĐỔI ✨
         this.input.keyboard!.on('keydown-B', () => this.handleQuizAnswer('B'), this); // ✨ SỬA ĐỔI ✨
@@ -1265,6 +1275,7 @@ export default class LobbyScene extends Scene {
     }
 
     private endQuiz(): void {
+        this.isShowingQuizResult = false;
         // ✨ KIỂM TRA ĐÃ HOÀN THÀNH TẤT CẢ CÂU HỎI CHƯA (Index 10 sau khi trả lời câu 9) ✨
         if (this.currentQuestionIndex >= this.quizQuestions.length) {
             this.hasCompletedQuiz = true; // Set cờ hoàn thành
@@ -1282,8 +1293,6 @@ export default class LobbyScene extends Scene {
         // Xóa tất cả listener liên quan đến Quiz
         this.input.keyboard!.off('keydown-A', this.handleQuizAnswer, this);
         this.input.keyboard!.off('keydown-B', this.handleQuizAnswer, this);
-        this.input.keyboard!.off('keydown-SPACE', this.continueQuiz, this);
-        this.input.off('pointerdown', this.continueQuiz, this);
         this.input.keyboard!.off('keydown-X', this.endQuiz, this); // Dọn dẹp listener cuối cùng
 
         // Hiển thị lại tên NPC

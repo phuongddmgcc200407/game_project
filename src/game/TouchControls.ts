@@ -219,8 +219,6 @@ export default class TouchControls {
       state.isDown = true;
       state.justPressed = true;
       btn.style.transform = btn.style.transform.replace('scale(0.9)', '') + ' scale(0.9)';
-      btn.style.background = 'rgba(255, 255, 255, 0.15)';
-      btn.style.boxShadow = 'inset 0 0 15px rgba(255, 255, 255, 0.4), 0 0 8px rgba(255, 255, 255, 0.2)';
     });
 
     btn.addEventListener('pointerup', (e) => {
@@ -234,8 +232,6 @@ export default class TouchControls {
       state.isDown = false;
       state.justReleased = true;
       btn.style.transform = btn.style.transform.replace(' scale(0.9)', '');
-      btn.style.background = '';
-      btn.style.boxShadow = '';
     });
 
     btn.addEventListener('pointerleave', (e) => {
@@ -244,8 +240,6 @@ export default class TouchControls {
         state.isDown = false;
         state.justReleased = true;
         btn.style.transform = btn.style.transform.replace(' scale(0.9)', '');
-        btn.style.background = '';
-        btn.style.boxShadow = '';
       }
     });
 
@@ -255,8 +249,6 @@ export default class TouchControls {
         state.isDown = false;
         state.justReleased = true;
         btn.style.transform = btn.style.transform.replace(' scale(0.9)', '');
-        btn.style.background = '';
-        btn.style.boxShadow = '';
       }
     });
 
