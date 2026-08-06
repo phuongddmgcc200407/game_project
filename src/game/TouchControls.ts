@@ -54,69 +54,138 @@ export default class TouchControls {
   }
 
   private createButtons(): void {
-    // === D-PAD (Góc dưới trái) ===
+    const btnSize = '56px';
+    const btnSizeSm = '44px';
+    const gap = '6px';
+
+    // ========================================
+    // D-PAD (Góc dưới trái) — Layout ngang
+    // ========================================
     const dpad = this.createGroup('dpad', `
-      position: absolute; bottom: 20px; left: 15px;
-      display: grid;
-      grid-template-columns: 65px 65px 65px;
-      grid-template-rows: 65px 65px;
-      gap: 4px;
-    `);
-
-    // Row 1: [empty] [jump] [empty]
-    dpad.appendChild(this.createSpacer());
-    this.createButton('jump', '⬆', dpad, '');
-    dpad.appendChild(this.createSpacer());
-
-    // Row 2: [left] [empty] [right]
-    this.createButton('left', '◀', dpad, '');
-    dpad.appendChild(this.createSpacer());
-    this.createButton('right', '▶', dpad, '');
-
-    // === ACTION BUTTONS (Góc dưới phải) ===
-    const actions = this.createGroup('actions', `
-      position: absolute; bottom: 20px; right: 15px;
+      position: absolute;
+      bottom: env(safe-area-inset-bottom, 8px);
+      left: env(safe-area-inset-left, 8px);
+      bottom: max(8px, env(safe-area-inset-bottom));
+      left: max(8px, env(safe-area-inset-left));
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      align-items: center;
+      gap: ${gap};
+    `);
+
+    // Hàng trên: nút Nhảy (⬆) — canh giữa
+    const dpadRow1 = document.createElement('div');
+    dpadRow1.style.cssText = `display: flex; justify-content: center; width: 100%;`;
+    this.createButton('jump', '⬆', dpadRow1, `width: ${btnSize}; height: ${btnSize};`);
+    dpad.appendChild(dpadRow1);
+
+    // Hàng dưới: ◀ ▶ cạnh nhau
+    const dpadRow2 = document.createElement('div');
+    dpadRow2.style.cssText = `display: flex; gap: ${gap};`;
+    this.createButton('left', '◀', dpadRow2, `width: ${btnSize}; height: ${btnSize};`);
+    this.createButton('right', '▶', dpadRow2, `width: ${btnSize}; height: ${btnSize};`);
+    dpad.appendChild(dpadRow2);
+
+    // ========================================
+    // ACTION BUTTONS (Góc dưới phải) — Layout compact
+    // ========================================
+    const actions = this.createGroup('actions', `
+      position: absolute;
+      bottom: env(safe-area-inset-bottom, 8px);
+      right: env(safe-area-inset-right, 8px);
+      bottom: max(8px, env(safe-area-inset-bottom));
+      right: max(8px, env(safe-area-inset-right));
+      display: flex;
+      flex-direction: column;
       align-items: flex-end;
+      gap: ${gap};
     `);
 
-    // Hàng 1: A + S
-    const row1 = document.createElement('div');
-    row1.style.cssText = 'display: flex; gap: 6px;';
-    this.createButton('attack', '⚔A', row1, 'background: rgba(220,50,50,0.55);');
-    this.createButton('ultimate', '🔥S', row1, 'background: rgba(220,140,0,0.55);');
-    actions.appendChild(row1);
+    // Hàng 1: A + S (tấn công chính)
+    const actRow1 = document.createElement('div');
+    actRow1.style.cssText = `display: flex; gap: ${gap};`;
+    this.createButton('attack', '⚔A', actRow1, `
+      width: ${btnSize}; height: ${btnSize};
+      background: rgba(200, 50, 50, 0.6);
+      border-color: rgba(255, 100, 100, 0.5);
+    `);
+    this.createButton('ultimate', '🔥S', actRow1, `
+      width: ${btnSize}; height: ${btnSize};
+      background: rgba(200, 130, 0, 0.6);
+      border-color: rgba(255, 180, 50, 0.5);
+    `);
+    actions.appendChild(actRow1);
 
-    // Hàng 2: D + X
-    const row2 = document.createElement('div');
-    row2.style.cssText = 'display: flex; gap: 6px;';
-    this.createButton('soldier', '🛡D', row2, 'background: rgba(50,160,50,0.55);');
-    this.createButton('interact', '✋X', row2, 'background: rgba(80,80,220,0.55);');
-    actions.appendChild(row2);
+    // Hàng 2: D + X (hỗ trợ)
+    const actRow2 = document.createElement('div');
+    actRow2.style.cssText = `display: flex; gap: ${gap};`;
+    this.createButton('soldier', '🛡D', actRow2, `
+      width: ${btnSize}; height: ${btnSize};
+      background: rgba(50, 150, 50, 0.6);
+      border-color: rgba(100, 200, 100, 0.5);
+    `);
+    this.createButton('interact', '✋X', actRow2, `
+      width: ${btnSize}; height: ${btnSize};
+      background: rgba(60, 60, 200, 0.6);
+      border-color: rgba(100, 100, 255, 0.5);
+    `);
+    actions.appendChild(actRow2);
 
-    // Hàng 3: SPACE (dùng cho next dialogue, level complete, etc.)
-    const row3 = document.createElement('div');
-    row3.style.cssText = 'display: flex; gap: 6px;';
-    this.createButton('space', 'SPACE', row3, 'background: rgba(150,150,150,0.55); width: 134px;');
-    actions.appendChild(row3);
+    // Hàng 3: SPACE (rộng, canh giữa hàng)
+    const actRow3 = document.createElement('div');
+    actRow3.style.cssText = `display: flex; gap: ${gap}; width: 100%;`;
+    this.createButton('space', 'SPACE', actRow3, `
+      width: calc(${btnSize} * 2 + ${gap});
+      height: ${btnSizeSm};
+      font-size: 13px;
+      background: rgba(120, 120, 120, 0.5);
+      border-color: rgba(180, 180, 180, 0.4);
+    `);
+    actions.appendChild(actRow3);
 
-    // === TOP-RIGHT BUTTONS (Góc trên phải) ===
+    // ========================================
+    // TOP-RIGHT BUTTONS (nhỏ, góc trên phải)
+    // ========================================
     const topRight = this.createGroup('top-right', `
-      position: absolute; top: 12px; right: 15px;
-      display: flex; gap: 6px;
+      position: absolute;
+      top: max(8px, env(safe-area-inset-top));
+      right: max(8px, env(safe-area-inset-right));
+      display: flex;
+      gap: ${gap};
     `);
-    this.createButton('stats', '📊C', topRight, 'width: 55px; height: 40px; font-size: 13px; background: rgba(100,100,100,0.55);');
-    this.createButton('pause', '⏸', topRight, 'width: 55px; height: 40px; font-size: 16px; background: rgba(100,100,100,0.55);');
+    this.createButton('stats', '📊', topRight, `
+      width: ${btnSizeSm}; height: 36px; font-size: 16px;
+      background: rgba(80, 80, 80, 0.5);
+      border-color: rgba(150, 150, 150, 0.3);
+    `);
+    this.createButton('pause', '⏸', topRight, `
+      width: ${btnSizeSm}; height: 36px; font-size: 16px;
+      background: rgba(80, 80, 80, 0.5);
+      border-color: rgba(150, 150, 150, 0.3);
+    `);
 
-    // === QUIZ ANSWER BUTTONS (Hiển thị khi quiz active) ===
+    // ========================================
+    // QUIZ ANSWER BUTTONS (giữa bên phải, chỉ khi quiz)
+    // ========================================
     const quizGroup = this.createGroup('quiz', `
-      position: absolute; bottom: 160px; right: 15px;
-      display: flex; gap: 8px;
+      position: absolute;
+      right: max(8px, env(safe-area-inset-right));
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     `);
-    this.createButton('answerA', 'A', quizGroup, 'width: 70px; height: 55px; font-size: 22px; background: rgba(0,120,200,0.65); font-weight: bold;');
-    this.createButton('answerB', 'B', quizGroup, 'width: 70px; height: 55px; font-size: 22px; background: rgba(200,120,0,0.65); font-weight: bold;');
+    this.createButton('answerA', 'A', quizGroup, `
+      width: 64px; height: 52px; font-size: 22px; font-weight: bold;
+      background: rgba(0, 110, 190, 0.7);
+      border-color: rgba(80, 170, 255, 0.6);
+    `);
+    this.createButton('answerB', 'B', quizGroup, `
+      width: 64px; height: 52px; font-size: 22px; font-weight: bold;
+      background: rgba(190, 110, 0, 0.7);
+      border-color: rgba(255, 180, 60, 0.6);
+    `);
   }
 
   private createGroup(id: string, style: string): HTMLDivElement {
@@ -127,21 +196,15 @@ export default class TouchControls {
     return group;
   }
 
-  private createSpacer(): HTMLDivElement {
-    const spacer = document.createElement('div');
-    spacer.style.cssText = 'width: 65px; height: 65px;';
-    return spacer;
-  }
-
   private createButton(id: TouchButtonId, label: string, parent: HTMLElement, extraStyle: string): void {
     const btn = document.createElement('button');
     btn.id = `touch-btn-${id}`;
     btn.textContent = label;
     btn.style.cssText = `
-      width: 65px; height: 65px;
-      border: 2px solid rgba(255,255,255,0.4);
-      border-radius: 12px;
-      background: rgba(255,255,255,0.2);
+      width: 56px; height: 56px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.18);
       color: white;
       font-size: 18px;
       font-weight: bold;
@@ -154,6 +217,10 @@ export default class TouchControls {
       display: flex;
       align-items: center;
       justify-content: center;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      transition: transform 0.05s ease;
       ${extraStyle}
     `;
 
@@ -172,7 +239,8 @@ export default class TouchControls {
       state.isDown = true;
       state.justPressed = true;
       btn.style.opacity = '1';
-      btn.style.transform = 'scale(0.92)';
+      btn.style.transform = 'scale(0.9)';
+      btn.style.background = btn.style.background.replace(/[\d.]+\)$/, '0.85)');
     });
 
     btn.addEventListener('pointerup', (e) => {
