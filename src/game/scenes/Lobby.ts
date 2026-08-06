@@ -600,6 +600,17 @@ export default class LobbyScene extends Scene {
                     this.handleQuizAnswer('A');
                 } else if (this.touchControls.justPressed('answerB')) {
                     this.handleQuizAnswer('B');
+                } else if (this.touchControls.justPressed('interact')) { // Nút X (Quay lại)
+                    this.endQuiz();
+                }
+            }
+
+            // 📱 Xử lý touch cho Dialogue Quest (Y/N)
+            if (this.isInDialogue) {
+                if (this.touchControls.justPressed('answerY')) {
+                    this.handleYes();
+                } else if (this.touchControls.justPressed('answerN')) {
+                    this.handleNo();
                 }
             }
 
@@ -745,6 +756,9 @@ export default class LobbyScene extends Scene {
         this.nguyenXiNameText.setVisible(false);
 
         this.dialogueText.setText("Tướng quân, người đã sẵn sàng dẫn quân ra trận chưa? [N] Chưa/ [Y] Vô trận");
+        
+        // 📱 Chuyển touch context sang dialogueQuest để hiện nút Y/N
+        this.touchControls.setContext('dialogueQuest');
     }
 
     // Xử lý khi người chơi nhấn YES (Giữ nguyên)
@@ -794,6 +808,9 @@ export default class LobbyScene extends Scene {
         // ✨ TẮT LISTENER ĐINH LỄ KHI DIALOGUE KẾT THÚC ✨
         // this.disableDialogueKeys();
         this.player.setTexture('leloi1');
+
+        // 📱 Đưa touch context trở lại lobby
+        this.touchControls.setContext('lobby');
     }
     // ✨ INIT LÀ HÀM NHẬN DỮ LIỆU TRUYỀN TỪ SCENE TRƯỚC ✨
 
@@ -1151,6 +1168,9 @@ export default class LobbyScene extends Scene {
             // Dùng `once` với phím SPACE để đóng hộp thoại chung
             this.input.keyboard!.once('keydown-SPACE', this.endDialogue, this);
             this.input.once('pointerdown', this.endDialogue, this);
+            
+            // 📱 Ẩn touch controls đi khi xem thông báo hoàn thành
+            this.touchControls.setContext('none');
             return;
         }
 

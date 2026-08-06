@@ -9,7 +9,7 @@ export type TouchButtonId =
   | 'left' | 'right' | 'jump'
   | 'attack' | 'ultimate' | 'soldier'
   | 'interact' | 'stats' | 'pause'
-  | 'answerA' | 'answerB';
+  | 'answerA' | 'answerB' | 'answerY' | 'answerN';
 
 type ButtonState = {
   isDown: boolean;
@@ -18,7 +18,7 @@ type ButtonState = {
   element: HTMLButtonElement;
 };
 
-export type TouchContext = 'none' | 'mainmenu' | 'lobby' | 'game' | 'quiz';
+export type TouchContext = 'none' | 'mainmenu' | 'lobby' | 'game' | 'quiz' | 'dialogueQuest';
 
 export default class TouchControls {
   private container: HTMLDivElement;
@@ -151,6 +151,14 @@ export default class TouchControls {
       position: relative;
       width: 70px; height: 60px; font-size: 24px; font-weight: bold;
     `);
+    this.createButton('answerY', 'Vô Trận', quizGroup, `
+      position: relative;
+      width: 100px; height: 50px; font-size: 16px; font-weight: bold;
+    `);
+    this.createButton('answerN', 'Chưa', quizGroup, `
+      position: relative;
+      width: 100px; height: 50px; font-size: 16px; font-weight: bold;
+    `);
   }
 
   private createGroup(id: string, style: string): HTMLDivElement {
@@ -166,9 +174,11 @@ export default class TouchControls {
     btn.id = `touch-btn-${id}`;
     btn.textContent = label;
     btn.style.cssText = `
-      border: 2px solid rgba(255,255,255,0.35);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.15), 0 2px 5px rgba(0, 0, 0, 0.1);
       border-radius: 50%;
-      color: white;
+      color: rgba(255, 255, 255, 0.9);
       font-size: 18px;
       font-weight: bold;
       pointer-events: auto;
@@ -180,15 +190,15 @@ export default class TouchControls {
       display: flex;
       align-items: center;
       justify-content: center;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
-      transition: transform 0.05s ease;
+      transition: all 0.1s ease;
       ${extraStyle}
     `;
 
     // Giữ hình chữ nhật bo tròn cho các nút không phải hình tròn
-    if (extraStyle.includes('width: 65px') || id === 'answerA' || id === 'answerB') {
+    if (extraStyle.includes('width: 65px') || id === 'answerA' || id === 'answerB' || id === 'answerY' || id === 'answerN') {
       btn.style.borderRadius = '14px';
     }
 
@@ -206,10 +216,9 @@ export default class TouchControls {
       btn.setPointerCapture(e.pointerId);
       state.isDown = true;
       state.justPressed = true;
-      btn.style.opacity = '1';
       btn.style.transform = btn.style.transform.replace('scale(0.9)', '') + ' scale(0.9)';
-      if (!btn.dataset.origBg) btn.dataset.origBg = btn.style.background;
-      btn.style.background = btn.dataset.origBg.replace(/[\d.]+\)$/, '0.85)');
+      btn.style.background = 'rgba(255, 255, 255, 0.25)';
+      btn.style.boxShadow = 'inset 0 0 15px rgba(255, 255, 255, 0.4), 0 0 8px rgba(255, 255, 255, 0.2)';
     });
 
     btn.addEventListener('pointerup', (e) => {
@@ -218,9 +227,9 @@ export default class TouchControls {
       btn.releasePointerCapture(e.pointerId);
       state.isDown = false;
       state.justReleased = true;
-      btn.style.opacity = '';
       btn.style.transform = btn.style.transform.replace(' scale(0.9)', '');
-      if (btn.dataset.origBg) btn.style.background = btn.dataset.origBg;
+      btn.style.background = '';
+      btn.style.boxShadow = '';
     });
 
     btn.addEventListener('pointerleave', (e) => {
@@ -228,9 +237,9 @@ export default class TouchControls {
       if (state.isDown) {
         state.isDown = false;
         state.justReleased = true;
-        btn.style.opacity = '';
         btn.style.transform = btn.style.transform.replace(' scale(0.9)', '');
-        if (btn.dataset.origBg) btn.style.background = btn.dataset.origBg;
+        btn.style.background = '';
+        btn.style.boxShadow = '';
       }
     });
 
@@ -239,9 +248,9 @@ export default class TouchControls {
       if (state.isDown) {
         state.isDown = false;
         state.justReleased = true;
-        btn.style.opacity = '';
         btn.style.transform = btn.style.transform.replace(' scale(0.9)', '');
-        if (btn.dataset.origBg) btn.style.background = btn.dataset.origBg;
+        btn.style.background = '';
+        btn.style.boxShadow = '';
       }
     });
 
@@ -315,14 +324,17 @@ export default class TouchControls {
         break;
 
       case 'quiz':
-        this.showGroup('dpad');
         this.showGroup('actions');
         this.showGroup('quiz');
-        this.showButton('left');
-        this.showButton('right');
-        this.showButton('jump');
+        this.showButton('interact'); // Nut X (Back)
         this.showButton('answerA');
         this.showButton('answerB');
+        break;
+
+      case 'dialogueQuest':
+        this.showGroup('quiz');
+        this.showButton('answerY');
+        this.showButton('answerN');
         break;
 
       case 'mainmenu':
