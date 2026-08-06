@@ -7,11 +7,18 @@ import GameScene from './scenes/Game';
 import LobbyScene from './scenes/Lobby';
 
 export default function StartGame(parentId: string) {
+  // Lấy tỷ lệ màn hình (luôn lấy chiều dài / chiều rộng)
+  const ratio = Math.max(window.innerWidth / window.innerHeight, window.innerHeight / window.innerWidth);
+  const DEFAULT_HEIGHT = 1000;
+  
+  // Tính toán chiều rộng sao cho vừa khít tỷ lệ màn hình điện thoại (tránh viền đen 2 bên)
+  const dynamicWidth = Math.floor(DEFAULT_HEIGHT * ratio);
+
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     parent: parentId,
     input: {
-      activePointers: 3, // Hỗ trợ multi-touch (di chuyển + bắn cùng lúc)
+      activePointers: 3, // Hỗ trợ multi-touch
     },
     physics: {
       default: 'arcade',
@@ -23,8 +30,8 @@ export default function StartGame(parentId: string) {
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 1900,
-        height: 1000,
+        width: dynamicWidth,
+        height: DEFAULT_HEIGHT,
       },
     scene: [Boot, Preloader, MainMenu, LobbyScene, GameScene],
   };
