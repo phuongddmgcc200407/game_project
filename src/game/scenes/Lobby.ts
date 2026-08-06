@@ -1254,8 +1254,8 @@ export default class LobbyScene extends Scene {
         // Tăng index câu hỏi
         this.currentQuestionIndex++;
 
-        // Chuyển sang câu hỏi tiếp theo sau 1.5s
-        this.time.delayedCall(1500, () => {
+        // Chuyển sang câu hỏi tiếp theo sau 1.25s
+        this.time.delayedCall(1250, () => {
             if (this.isQuizActive) {
                 this.continueQuiz();
             }

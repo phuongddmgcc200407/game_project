@@ -1220,6 +1220,8 @@ export default class GameScene extends Scene {
 
     // Thoát khỏi update nếu bảng chỉ số đang mở (để người chơi không di chuyển)
     if (this.isStatsPanelVisible) {
+      this.player.setVelocityX(0);
+      this.player.anims.stop();
       this.touchControls.resetFrameState();
       return;
     }
