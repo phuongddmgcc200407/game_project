@@ -581,11 +581,14 @@ export default class LobbyScene extends Scene {
             if (nearestNPC === this.npcQuest && !this.isInDialogue) {
                 // Mở hội thoại Đinh Lễ
                 this.startDialogue();
+                this.touchControls.resetFrameState();
             } else if (nearestNPC === this.npcShop && !this.isShopOpen) {
                 // Mở Shop Nguyễn Xí
                 this.toggleShop(true);
+                this.touchControls.resetFrameState();
             } else if (nearestNPC === this.npcQuiz && !this.isQuizActive) { // ✨ XỬ LÝ NPC QUIZ ✨
                 this.startQuiz();
+                this.touchControls.resetFrameState();
             }
 
         }
