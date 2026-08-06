@@ -366,7 +366,7 @@ export default class LobbyScene extends Scene {
         // 5. Thêm NPC và Vật lý
         // NPC QUEST (Đinh Lễ)
         this.npcQuest = this.physics.add.sprite(
-            camWidth - 150,
+            camWidth / 2 + 300,
             npcStartY,
             "dinhle1"
         ).setOrigin(0.5, 1).setImmovable(true);
@@ -532,6 +532,7 @@ export default class LobbyScene extends Scene {
             "Ấn [D]: Để triệu hồi lính\n" +
             "Ấn [C]: Để xem chỉ số nhân vật\n" +
             "[ESC]: Tạm Dừng Game (Pause)\n\n" +
+            "⚠️ Lưu ý: Trò chơi đang trong giai đoạn phát triển nên một số tính năng vẫn còn lỗi, xin chân thành cảm ơn!\n\n" +
             "Ấn [ENTER] để bắt đầu du hành cùng tướng quân Lê Lợi!";
 
         this.guideText.setText(guideContent);

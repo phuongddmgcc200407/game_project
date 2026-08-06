@@ -597,6 +597,69 @@ export default class GameScene extends Scene {
 
     // ✨ DÒNG SỬA LỖI: KHỞI TẠO PANEL HỒI SINH TRONG CREATE() ✨
     this.respawnPanel = this.createRespawnPanel();
+    
+    // Hiện hướng dẫn chiến đấu khi mới vào trận
+    this.createTutorialPanel();
+  }
+
+  // ✨ HÀM TẠO BẢNG HƯỚNG DẪN CHIẾN ĐẤU ✨
+  private createTutorialPanel(): void {
+    const camWidth = this.cameras.main.width;
+    const camHeight = this.cameras.main.height;
+
+    // Nền tối mờ toàn màn hình
+    const overlay = this.add.rectangle(0, 0, camWidth, camHeight, 0x000000, 0.8)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(3000)
+      .setInteractive();
+
+    const panelWidth = 600;
+    const panelHeight = 260;
+    const panel = this.add.rectangle(camWidth / 2, camHeight / 2, panelWidth, panelHeight, 0x222222, 1)
+      .setScrollFactor(0)
+      .setDepth(3001)
+      .setStrokeStyle(2, 0xffd700);
+
+    const title = this.add.text(camWidth / 2, camHeight / 2 - 90, "⚔️ HƯỚNG DẪN CHIẾN ĐẤU ⚔️", {
+      fontSize: "24px",
+      color: "#ffd700",
+      fontStyle: "bold"
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(3002);
+
+    const content = this.add.text(camWidth / 2, camHeight / 2, 
+      "• Giữ [A]: Kéo cung bắn tên (Tấn công cơ bản)\n\n" +
+      "• Giữ [S]: Sử dụng Tuyệt chiêu (Yêu cầu Cấp 2)\n\n" +
+      "• Nhấn [D]: Triệu hồi lính (Yêu cầu Cấp 3 và Xu)", {
+      fontSize: "20px",
+      color: "#ffffff",
+      lineSpacing: 10
+    }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(3002);
+
+    const closeText = this.add.text(camWidth / 2, camHeight / 2 + 100, "( Chạm vào đây để bắt đầu )", {
+      fontSize: "18px",
+      color: "#aaaaaa",
+      fontStyle: "italic"
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(3002);
+
+    // Tạm dừng game
+    this.isPaused = true;
+    this.physics.world.isPaused = true;
+    this.time.paused = true;
+
+    // Tự động hủy khi click
+    overlay.on('pointerdown', () => {
+      overlay.destroy();
+      panel.destroy();
+      title.destroy();
+      content.destroy();
+      closeText.destroy();
+      
+      // Tiếp tục game
+      this.isPaused = false;
+      this.physics.world.isPaused = false;
+      this.time.paused = false;
+    });
   }
 
   // --- UI Logic ---
